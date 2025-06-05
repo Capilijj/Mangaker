@@ -320,8 +320,8 @@ class DashboardPage(ctk.CTkFrame):
         self.genre_option_menu.set("Genre")
         self.status_option.set("Status")
         self.order_option.set("Order By Default")
-
         self.update_filter_visibility()
+        self.controller.title("Home")
 
     def bookmark_action(self):
         self.set_active_button(self.bookmark_button)
@@ -330,6 +330,7 @@ class DashboardPage(ctk.CTkFrame):
         self.filter_row_frame.pack_forget()
         self.bookmark_container.pack(fill="both", expand=True)
         self.update_filter_visibility()
+        self.controller.title("Bookmarks")
 
     def profile_action(self):
         self.set_active_button(self.profile_button)
@@ -338,7 +339,8 @@ class DashboardPage(ctk.CTkFrame):
         self.filter_row_frame.pack_forget()
         self.profile_container.pack(fill="both", expand=True)
         self.update_filter_visibility()
-
+        self.controller.title("Profile")  
+        
     def update_filter_visibility(self):
         if self.active_button == self.home_button:
             # Show filter widgets
@@ -360,7 +362,7 @@ class DashboardPage(ctk.CTkFrame):
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("Dashboard Test")
+        self.title("Dashboard test")
         self.geometry("600x700")
 
         self.dashboard = DashboardPage(self, controller=self)

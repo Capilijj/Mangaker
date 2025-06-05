@@ -314,7 +314,7 @@ class ForgotPasswordPage(ctk.CTkFrame):
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("Login with Background")
+        self.title("Login Page")
         self.geometry("1200x680")
         self.resizable(False, False) #palitan nalang to pag trip max ang window to (True , False)
 
@@ -332,16 +332,21 @@ class App(ctk.CTk):
         self.show_login()
         
     def show_login(self):
+        self.title("Login Page")
         self.login_page.tkraise()
     
     def show_register(self):
+        self.title("Register Page")
         self.register_page.tkraise()
 
     def show_forgot_password(self):
+        self.title("Forgot Password")
         self.forgot_password_page.tkraise()     
 
     def show_dashboard(self):
+        self.title("Dashboard")
         self.dashboard_page.tkraise()
+        
 
     def login_success(self):
         email = self.login_page.email_entry.get()
