@@ -1,4 +1,4 @@
-#<<<< PROFILE PAGE >>>>>
+#<<<<< PROFILE PAGE >>>>>
 import customtkinter as ctk
 
 class ProfilePage(ctk.CTkFrame):
