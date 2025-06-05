@@ -1,4 +1,4 @@
-# backend2.py
+# <<<BACK END TO NG DASHBOARD PAGE >>>
 mangas = [
     {
         "title": "One Piece",
