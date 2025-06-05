@@ -1,9 +1,8 @@
 import customtkinter as ctk
 from tkinter import messagebox
 from PIL import Image, ImageTk, ImageDraw
-from backend1 import authenticate
-from backend1 import register_user
-from dashboard import Dashboard
+from backend1 import authenticate, register_user
+from dashboard import DashboardPage  
 
 
 # Helper function to make image circular
@@ -39,7 +38,7 @@ class Login(ctk.CTkFrame):
         self.card.lift()
 
         try:
-            self.logo_img = Image.open(r"image/bg.jpg")  # Replace with your logo path
+            self.logo_img = Image.open(r"image/mangaker.jpg")  # Replace with your logo path
             self.logo_img = self.logo_img.resize((100, 100), Image.Resampling.LANCZOS)
             self.logo_img = make_circle(self.logo_img)
             self.logo_photo = ImageTk.PhotoImage(self.logo_img)
@@ -128,6 +127,7 @@ class Login(ctk.CTkFrame):
             if self.icon_open:
                 self.toggle_password_button.configure(image=self.icon_open)
             self.show_password = True
+    
 
 # ------------------------- REGISTER PAGE -------------------------
 class RegisterPage(ctk.CTkFrame):
@@ -150,7 +150,7 @@ class RegisterPage(ctk.CTkFrame):
         self.card.pack_propagate(False)
 
         try:
-            self.logo_img = Image.open(r"image/bg.jpg")  # Replace with your logo path
+            self.logo_img = Image.open(r"image/mangaker.jpg")  # Replace with your logo path
             self.logo_img = self.logo_img.resize((100, 100), Image.Resampling.LANCZOS)
             self.logo_img = make_circle(self.logo_img)
             self.logo_photo = ImageTk.PhotoImage(self.logo_img)
@@ -310,26 +310,27 @@ class ForgotPasswordPage(ctk.CTkFrame):
         self.back_to_login.pack()
         self.back_to_login.bind("<Button-1>", lambda e: self.switch_to_login())
 
-
 # ------------------------- APP CLASS -------------------------
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("Login with Background")
-        self.geometry("480x640")
+        self.geometry("1200x680")
+        self.resizable(False, False) #palitan nalang to pag trip max ang window to (True , False)
 
         self.container = ctk.CTkFrame(self)
         self.container.pack(fill="both", expand=True)
         self.login_page = Login(self.container, self.show_register, self.show_forgot_password, self.login_success)
         self.register_page = RegisterPage(self.container, self.show_login)
         self.forgot_password_page = ForgotPasswordPage(self.container, self.show_login)
+        self.dashboard_page = DashboardPage(self.container, self)
 
-        for page in (self.login_page, self.register_page, self.forgot_password_page):
+        # Place all pages
+        for page in (self.login_page, self.register_page, self.forgot_password_page, self.dashboard_page):
             page.place(relx=0, rely=0, relwidth=1, relheight=1)
 
         self.show_login()
-
-
+        
     def show_login(self):
         self.login_page.tkraise()
     
@@ -338,6 +339,9 @@ class App(ctk.CTk):
 
     def show_forgot_password(self):
         self.forgot_password_page.tkraise()     
+
+    def show_dashboard(self):
+        self.dashboard_page.tkraise()
 
     def login_success(self):
         email = self.login_page.email_entry.get()
@@ -350,12 +354,11 @@ class App(ctk.CTk):
         success, message = authenticate(email, password)
 
         if success:
-            messagebox.showinfo("Success", "Logged in successfully!")
-            self.destroy()            # Close current window
-            dashboard = Dashboard()
-            dashboard.mainloop()
+            messagebox.showinfo("Success", message)
+            self.show_dashboard()
         else:
-            messagebox.showerror("Login Failed", "Invalid email or password.")
+            messagebox.showerror("Login Failed", message)
+
 
 # ------------------------- RUN APP -------------------------
 if __name__ == "__main__":
