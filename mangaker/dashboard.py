@@ -1,5 +1,6 @@
 import customtkinter as ctk
-from PIL import Image, ImageTk, ImageDraw, ImageEnhance
+from PIL import Image, ImageDraw, ImageEnhance
+from customtkinter import CTkImage
 from backend2 import get_mangas
 import os
 from bookmark import BookmarkPage
@@ -85,9 +86,9 @@ class MangaViewer(ctk.CTkFrame):
         manga = self.mangas[index]
         try:
             img = Image.open(manga["image_path"]).resize((250, 320), Image.Resampling.LANCZOS)
-            photo = ImageTk.PhotoImage(img)
-            self.image_label.configure(image=photo, text="")
-            self.image_label.image = photo
+            ctk_img = CTkImage(light_image=img, dark_image=img, size=(250, 320))
+            self.image_label.configure(image=ctk_img, text="")
+            self.image_label.image = ctk_img
 
             enhancer = ImageEnhance.Brightness(img)
             dark_img = enhancer.enhance(0.2)
@@ -98,9 +99,9 @@ class MangaViewer(ctk.CTkFrame):
                 return
 
             dark_img_resized = dark_img.resize((container_width, container_height), Image.Resampling.LANCZOS)
-            dark_photo = ImageTk.PhotoImage(dark_img_resized)
-            self.bg_label.configure(image=dark_photo)
-            self.bg_label.image = dark_photo
+            ctk_dark_img = CTkImage(light_image=dark_img_resized, dark_image=dark_img_resized, size=(container_width, container_height))
+            self.bg_label.configure(image=ctk_dark_img)
+            self.bg_label.image = ctk_dark_img 
         except Exception as e:
             print(f"Failed to load image: {e}")
             self.image_label.configure(text="No Image", image=None)
@@ -149,7 +150,7 @@ class DashboardPage(ctk.CTkFrame):
             self.logo_img = Image.open(r"image/mangaker.jpg")
             self.logo_img = self.logo_img.resize((40, 40), Image.Resampling.LANCZOS)
             self.logo_img = make_circle(self.logo_img)
-            self.logo_photo = ImageTk.PhotoImage(self.logo_img)
+            self.logo_photo = CTkImage(light_image=self.logo_img, dark_image=self.logo_img, size=(40, 40))
             self.logo = ctk.CTkLabel(self.top_container, image=self.logo_photo, text="")
             self.logo.pack(side="left", padx=15, pady=10)
         except Exception as e:
@@ -186,7 +187,7 @@ class DashboardPage(ctk.CTkFrame):
         main_search_icon_path = r"image/glass1.gif"
         if os.path.exists(main_search_icon_path):
             main_icon_img = Image.open(main_search_icon_path).resize((25, 25), Image.Resampling.LANCZOS)
-            self.search_icon = ImageTk.PhotoImage(main_icon_img)
+            self.search_icon = CTkImage(light_image=main_icon_img, dark_image=main_icon_img, size=(25, 25))
         else:
             self.search_icon = None
             print(f"Image not found: {main_search_icon_path}")
@@ -215,7 +216,7 @@ class DashboardPage(ctk.CTkFrame):
         filter_search_icon_path = r"image/glass2.png"
         if os.path.exists(filter_search_icon_path):
             filter_icon_img = Image.open(filter_search_icon_path).resize((25, 25), Image.Resampling.LANCZOS)
-            self.filter_search_icon = ImageTk.PhotoImage(filter_icon_img)
+            self.filter_search_icon = CTkImage(light_image=filter_icon_img, dark_image=filter_icon_img, size=(25, 25))
         else:
             self.filter_search_icon = None
             print(f"Image not found: {filter_search_icon_path}")
