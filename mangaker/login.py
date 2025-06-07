@@ -1,8 +1,8 @@
 import customtkinter as ctk
 from tkinter import messagebox
-from PIL import Image, ImageTk, ImageDraw
+from PIL import Image, ImageDraw
 from backend1 import authenticate, register_user
-from dashboard import DashboardPage  
+from dashboard import DashboardPage
 
 
 # Helper function to make image circular
@@ -15,6 +15,7 @@ def make_circle(img: Image.Image) -> Image.Image:
     img.putalpha(mask)
     return img
 
+
 # ------------------------- LOGIN PAGE -------------------------
 class Login(ctk.CTkFrame):
     def __init__(self, parent, switch_to_register, switch_to_forgot_password, login_success):
@@ -24,9 +25,10 @@ class Login(ctk.CTkFrame):
         self.switch_to_forgot_password = switch_to_forgot_password
         self.login_success = login_success
         self.pack(fill="both", expand=True)
+
         try:
             bg_image = Image.open("image/bg.jpg").resize((1200, 680), Image.Resampling.LANCZOS)
-            self.bg_photo = ImageTk.PhotoImage(bg_image)
+            self.bg_photo = ctk.CTkImage(light_image=bg_image, size=bg_image.size)
             self.bg_label = ctk.CTkLabel(self, image=self.bg_photo, text="")
             self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         except Exception as e:
@@ -38,14 +40,13 @@ class Login(ctk.CTkFrame):
         self.card.lift()
 
         try:
-            self.logo_img = Image.open(r"image/mangaker.jpg")  # Replace with your logo path
-            self.logo_img = self.logo_img.resize((100, 100), Image.Resampling.LANCZOS)
+            self.logo_img = Image.open(r"image/mangaker.jpg").resize((100, 100), Image.Resampling.LANCZOS)
             self.logo_img = make_circle(self.logo_img)
-            self.logo_photo = ImageTk.PhotoImage(self.logo_img)
+            self.logo_photo = ctk.CTkImage(light_image=self.logo_img, size=(100, 100))
             self.logo_label = ctk.CTkLabel(self.card, image=self.logo_photo, text="")
             self.logo_label.pack(pady=(10, 10))
         except Exception:
-            pass  # ignore if image missing
+            pass
 
         self.logo_label = ctk.CTkLabel(self.card, text="James Mangaker",
                                        font=ctk.CTkFont(size=24, weight="bold"), text_color="black")
@@ -58,18 +59,15 @@ class Login(ctk.CTkFrame):
         self.email_entry = ctk.CTkEntry(self.card, placeholder_text="Email", width=300, height=40)
         self.email_entry.pack(pady=(5, 10))
 
-        # Load open/closed icons for toggle button
         try:
             self.icon_closed_img = Image.open(r"image/closed.png").resize((25, 25), Image.Resampling.LANCZOS)
-            self.icon_closed = ImageTk.PhotoImage(self.icon_closed_img)
-
             self.icon_open_img = Image.open(r"image/open.png").resize((25, 25), Image.Resampling.LANCZOS)
-            self.icon_open = ImageTk.PhotoImage(self.icon_open_img)
+            self.icon_closed = ctk.CTkImage(light_image=self.icon_closed_img, size=(25, 25))
+            self.icon_open = ctk.CTkImage(light_image=self.icon_open_img, size=(25, 25))
         except Exception:
             self.icon_closed = None
             self.icon_open = None
 
-        # Password entry with toggle
         self.password_frame = ctk.CTkFrame(self.card, width=300, height=40)
         self.password_frame.pack(pady=(5, 10))
         self.password_frame.pack_propagate(False)
@@ -127,7 +125,7 @@ class Login(ctk.CTkFrame):
             if self.icon_open:
                 self.toggle_password_button.configure(image=self.icon_open)
             self.show_password = True
-    
+
 
 # ------------------------- REGISTER PAGE -------------------------
 class RegisterPage(ctk.CTkFrame):
@@ -136,24 +134,23 @@ class RegisterPage(ctk.CTkFrame):
         self.parent = parent
         self.switch_to_login = switch_to_login
         self.pack(fill="both", expand=True)
+
         try:
             bg_image = Image.open("image/bg.jpg").resize((1200, 680), Image.Resampling.LANCZOS)
-            self.bg_photo = ImageTk.PhotoImage(bg_image)
+            self.bg_photo = ctk.CTkImage(light_image=bg_image, size=bg_image.size)
             self.bg_label = ctk.CTkLabel(self, image=self.bg_photo, text="")
             self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         except Exception as e:
             print("Background image not found or failed to load:", e)
-
 
         self.card = ctk.CTkFrame(self, width=360, height=480, corner_radius=15, fg_color="white", border_width=3)
         self.card.place(relx=0.5, rely=0.5, anchor="center")
         self.card.pack_propagate(False)
 
         try:
-            self.logo_img = Image.open(r"image/mangaker.jpg")  # Replace with your logo path
-            self.logo_img = self.logo_img.resize((100, 100), Image.Resampling.LANCZOS)
+            self.logo_img = Image.open(r"image/mangaker.jpg").resize((100, 100), Image.Resampling.LANCZOS)
             self.logo_img = make_circle(self.logo_img)
-            self.logo_photo = ImageTk.PhotoImage(self.logo_img)
+            self.logo_photo = ctk.CTkImage(light_image=self.logo_img, size=(100, 100))
             self.logo_label = ctk.CTkLabel(self.card, image=self.logo_photo, text="")
             self.logo_label.pack(pady=(10, 10))
         except Exception:
@@ -171,10 +168,9 @@ class RegisterPage(ctk.CTkFrame):
 
         try:
             self.icon_closed_img = Image.open(r"image/closed.png").resize((25, 25), Image.Resampling.LANCZOS)
-            self.icon_closed = ImageTk.PhotoImage(self.icon_closed_img)
-
             self.icon_open_img = Image.open(r"image/open.png").resize((25, 25), Image.Resampling.LANCZOS)
-            self.icon_open = ImageTk.PhotoImage(self.icon_open_img)
+            self.icon_closed = ctk.CTkImage(light_image=self.icon_closed_img, size=(25, 25))
+            self.icon_open = ctk.CTkImage(light_image=self.icon_open_img, size=(25, 25))
         except Exception:
             self.icon_closed = None
             self.icon_open = None
@@ -189,10 +185,8 @@ class RegisterPage(ctk.CTkFrame):
         self.show_password = False
 
         self.toggle_password_button = ctk.CTkButton(
-            self.password_frame, image=self.icon_closed, text="",
-            width=30, height=40,
-            fg_color="#302e2e",
-            command=self.toggle_password_visibility
+            self.password_frame, image=self.icon_closed, text="", width=30, height=40,
+            fg_color="#302e2e", command=self.toggle_password_visibility
         )
         self.toggle_password_button.pack(side="right")
 
@@ -247,30 +241,30 @@ class RegisterPage(ctk.CTkFrame):
             if self.icon_open:
                 self.toggle_confirm_password_button.configure(image=self.icon_open)
             self.show_confirm_password = True
-    
+
     def register(self):
         email = self.email_entry.get()
         username = self.username_entry.get()
         password = self.password_entry.get()
         confirm_password = self.confirm_password_entry.get()
-        
+
         if not email or not username or not password or not confirm_password:
             messagebox.showwarning("Input Error", "Please fill in all fields.")
             return
         if not email.endswith("@gmail.com"):
             messagebox.showerror("Error", "Email must be a Gmail address (ending with @gmail.com).")
             return
-
         if password != confirm_password:
             messagebox.showerror("Password Error", "Passwords do not match.")
             return
-        
+
         success, message = register_user(email, username, password)
         if success:
             messagebox.showinfo("Success", message)
             self.switch_to_login()
         else:
             messagebox.showerror("Registration Failed", message)
+
 
 # ------------------------- FORGOT PASSWORD PAGE -------------------------
 class ForgotPasswordPage(ctk.CTkFrame):
@@ -279,15 +273,15 @@ class ForgotPasswordPage(ctk.CTkFrame):
         self.parent = parent
         self.switch_to_login = switch_to_login
         self.pack(fill="both", expand=True)
-        
+
         try:
             bg_image = Image.open("image/bg.jpg").resize((1200, 680), Image.Resampling.LANCZOS)
-            self.bg_photo = ImageTk.PhotoImage(bg_image)
+            self.bg_photo = ctk.CTkImage(light_image=bg_image, size=bg_image.size)
             self.bg_label = ctk.CTkLabel(self, image=self.bg_photo, text="")
             self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         except Exception as e:
             print("Background image not found or failed to load:", e)
-        
+
         self.card = ctk.CTkFrame(self, width=360, height=230, corner_radius=15, fg_color="white", border_width=3)
         self.card.place(relx=0.5, rely=0.5, anchor="center")
         self.card.pack_propagate(False)
@@ -310,13 +304,14 @@ class ForgotPasswordPage(ctk.CTkFrame):
         self.back_to_login.pack()
         self.back_to_login.bind("<Button-1>", lambda e: self.switch_to_login())
 
+
 # ------------------------- APP CLASS -------------------------
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("Login Page")
         self.geometry("1200x680")
-        self.resizable(False, False) #palitan nalang to pag trip max ang window to (True , False)
+        self.resizable(False, False)
 
         self.container = ctk.CTkFrame(self)
         self.container.pack(fill="both", expand=True)
@@ -325,28 +320,26 @@ class App(ctk.CTk):
         self.forgot_password_page = ForgotPasswordPage(self.container, self.show_login)
         self.dashboard_page = DashboardPage(self.container, self)
 
-        # Place all pages
         for page in (self.login_page, self.register_page, self.forgot_password_page, self.dashboard_page):
             page.place(relx=0, rely=0, relwidth=1, relheight=1)
 
         self.show_login()
-        
+
     def show_login(self):
         self.title("Login Page")
         self.login_page.tkraise()
-    
+
     def show_register(self):
         self.title("Register Page")
         self.register_page.tkraise()
 
     def show_forgot_password(self):
         self.title("Forgot Password")
-        self.forgot_password_page.tkraise()     
+        self.forgot_password_page.tkraise()
 
     def show_dashboard(self):
-        self.title("Dashboard")
+        self.title("Home")
         self.dashboard_page.tkraise()
-        
 
     def login_success(self):
         email = self.login_page.email_entry.get()
@@ -355,7 +348,7 @@ class App(ctk.CTk):
         if not email or not password:
             messagebox.showwarning("Input Error", "Please enter both email and password.")
             return
-        
+
         success, message = authenticate(email, password)
 
         if success:
