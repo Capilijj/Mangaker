@@ -1,12 +1,13 @@
 import customtkinter as ctk
 from PIL import Image, ImageDraw, ImageEnhance
 from customtkinter import CTkImage
-from backend2 import get_mangas
-import os
+from backend2 import get_mangas, get_popular_manga, get_latest_update, get_user_prof
 from bookmark import BookmarkPage
 from profile import ProfilePage
+from Comic import MangaListPage
+import os
 
-# Helper to crop image in a circular shape
+
 def make_circle(img):
     size = (min(img.size),) * 2
     mask = Image.new('L', size, 0)
@@ -23,7 +24,7 @@ class MangaViewer(ctk.CTkFrame):
         self.current_index = 0
         self.auto_switch_delay = 6000
 
-        self.mangas = get_mangas()  # Call the function to get the list
+        self.mangas = get_mangas()
 
         self.container = ctk.CTkFrame(self, corner_radius=15, fg_color="#111010")
         self.container.pack(side="top", fill="x", padx=50, pady=20)
@@ -80,7 +81,6 @@ class MangaViewer(ctk.CTkFrame):
 
         self.container.bind("<Configure>", self.on_container_resize)
         self.load_manga(self.current_index)
-        self.after(self.auto_switch_delay, self.auto_switch)
 
     def load_manga(self, index):
         manga = self.mangas[index]
@@ -134,6 +134,100 @@ class MangaViewer(ctk.CTkFrame):
     def read_manga(self):
         print(f"Opening manga: {self.mangas[self.current_index]['title']}")
 
+class MangaListSection(ctk.CTkFrame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.configure(fg_color="transparent")
+        self.popular_manga = get_popular_manga()
+        self.latest_update = get_latest_update()
+        self.create_popular_section()
+        self.create_latest_update_section()
+
+    def create_popular_section(self):
+        label = ctk.CTkLabel(self, text="POPULAR TODAY", font=ctk.CTkFont(size=20, weight="bold"))
+        label.grid(row=0, column=0, pady=(0, 15), sticky="w")
+
+        popular_frame = ctk.CTkFrame(self)
+        popular_frame.grid(row=1, column=0, pady=(0, 30), sticky="ew")
+        popular_frame.grid_columnconfigure(tuple(range(6)), weight=1)
+
+        for idx, manga in enumerate(self.popular_manga):
+            container = ctk.CTkFrame(popular_frame, width=155, height=320, corner_radius=8)
+            container.grid(row=0, column=idx, padx=5, sticky="nsew")
+
+            try:
+                img = Image.open(manga["image"]).resize((140, 190))
+                photo = CTkImage(light_image=img, size=(90, 100))
+            except Exception:
+                photo = None
+
+            img_label = ctk.CTkLabel(container, image=photo, text="")
+            img_label.image = photo
+            img_label.pack(pady=10)
+
+            name_label = ctk.CTkLabel(container, text=manga["name"], font=ctk.CTkFont(size=16, weight="bold"))
+            name_label.pack(pady=(0, 3))
+            chapter_label = ctk.CTkLabel(container, text=f"Chapter {manga['chapter']}", font=ctk.CTkFont(size=13))
+            chapter_label.pack()
+
+            btn = ctk.CTkButton(container, text="Read Now", width=130, fg_color="#0dfa21", hover_color="#167e03", text_color="black")
+            btn.pack(pady=10)
+
+    def create_latest_update_section(self):
+        header_frame = ctk.CTkFrame(self)
+        header_frame.grid(row=2, column=0, sticky="ew", pady=(0, 10))
+        header_frame.grid_columnconfigure(0, weight=1)
+        header_frame.grid_columnconfigure(1, weight=0)
+
+        label = ctk.CTkLabel(header_frame, text="LATEST UPDATE", font=ctk.CTkFont(size=20, weight="bold"))
+        label.grid(row=0, column=0, sticky="w")
+
+        # Navigation: show manga list page in the same window
+        view_all_btn = ctk.CTkButton(
+            header_frame,
+            text="View All",
+            width=80,
+            fg_color="#0dfa21",
+            hover_color="#167e03",
+            text_color="black",
+            command=lambda: self.winfo_toplevel().show_manga_list()
+        )
+        view_all_btn.grid(row=0, column=1, sticky="e")
+
+        latest_frame = ctk.CTkFrame(self)
+        latest_frame.grid(row=3, column=0, sticky="ew")
+
+        for idx, manga in enumerate(self.latest_update):
+            r = idx // 3
+            c = idx % 3
+            self.create_latest_manga_container(latest_frame, manga, row=r, column=c)
+
+    def create_latest_manga_container(self, parent, manga, row, column):
+        container = ctk.CTkFrame(parent, width=280, height=120, corner_radius=8, fg_color="#222222")
+        container.grid(row=row, column=column, padx=10, pady=10, sticky="nsew")
+
+        container.grid_columnconfigure(1, weight=1)
+        container.grid_rowconfigure((0, 1, 2), weight=1)
+        parent.grid_columnconfigure(column, weight=1)
+
+        try:
+            img = Image.open(manga["image"]).resize((90, 100))
+            photo = CTkImage(light_image=img, size=(90, 100))
+        except Exception:
+            photo = None
+
+        img_label = ctk.CTkLabel(container, image=photo, text="")
+        img_label.image = photo
+        img_label.grid(row=0, column=0, rowspan=3, padx=10, pady=10, sticky="ns")
+
+        name_label = ctk.CTkLabel(container, text=manga["name"], font=ctk.CTkFont(size=16, weight="bold"))
+        name_label.grid(row=0, column=1, sticky="sw", pady=(15, 0), padx=10)
+
+        chapter_label = ctk.CTkLabel(container, text=f"Chapter {manga['chapter']}", font=ctk.CTkFont(size=14))
+        chapter_label.grid(row=1, column=1, sticky="nw", padx=10)
+
+        btn = ctk.CTkButton(container, text="READ", width=80, fg_color="#0dfa21", hover_color="#167e03", text_color="black")
+        btn.grid(row=0, column=2, rowspan=3, padx=15, pady=10, sticky="ns")
 
 class DashboardPage(ctk.CTkFrame):
     def __init__(self, parent, controller):
@@ -156,7 +250,6 @@ class DashboardPage(ctk.CTkFrame):
         except Exception as e:
             print("Logo loading failed:", e)
 
-        # Common style for buttons
         button_style = {
             "fg_color": "#39ff14",
             "hover_color": "#1f8112",
@@ -164,7 +257,6 @@ class DashboardPage(ctk.CTkFrame):
             "corner_radius": 10,
         }
 
-        # Navigation buttons
         self.home_button = ctk.CTkButton(self.top_container, text="Home", command=self.home_action, **button_style)
         self.home_button.pack(side="left", padx=10, pady=10)
 
@@ -173,17 +265,35 @@ class DashboardPage(ctk.CTkFrame):
 
         self.profile_button = ctk.CTkButton(self.top_container, text="Profile", command=self.profile_action, **button_style)
         self.profile_button.pack(side="left", padx=10, pady=10)
+        
+        # User profile dapat ito
+        user_info = get_user_prof()
+        image_path = user_info.get("profile_image")
 
-        # Search bar setup
+        if image_path and os.path.exists(image_path):
+            user_img = Image.open(image_path).resize((32, 32), Image.Resampling.LANCZOS)
+            user_img = make_circle(user_img)
+            self.user_icon = CTkImage(light_image=user_img, dark_image=user_img, size=(32, 32))
+        else:
+            self.user_icon = None
+            print(f"Image not found: {image_path}")
+
+        self.user_icon_label = ctk.CTkLabel(
+            self.top_container,
+            image=self.user_icon,
+            text=""
+        )
+    
+        self.user_icon_label.pack(side="right", padx=(5, 15), pady=0)
+        self.user_icon_label.bind("<Button-1>", lambda e: self.profile_action())
+
         self.search_frame = ctk.CTkFrame(self.top_container, width=240, height=36)
         self.search_frame.pack(side="right", pady=10, padx=10)
         self.search_frame.pack_propagate(False)
-
         self.search_entry = ctk.CTkEntry(self.search_frame, placeholder_text="Search...")
         self.search_entry.pack(side="left", fill="both", expand=True)
         self.search_entry.bind("<Return>", self.on_enter_pressed)
 
-        # Search icon for main search (glass1.gif)
         main_search_icon_path = r"image/glass1.gif"
         if os.path.exists(main_search_icon_path):
             main_icon_img = Image.open(main_search_icon_path).resize((25, 25), Image.Resampling.LANCZOS)
@@ -203,16 +313,13 @@ class DashboardPage(ctk.CTkFrame):
         )
         self.search_icon_button.pack(side="right")
 
-        # --- Filter row frame below top_container ---
         self.filter_row_frame = ctk.CTkFrame(self, fg_color="transparent", height=50)
         self.filter_row_frame.pack(side="top", fill="x", pady=(0, 10))
-        self.filter_row_frame.pack_propagate(False)  # fix height so it doesn't shrink
+        self.filter_row_frame.pack_propagate(False)
 
-        # Inner frame to hold filter widgets centered horizontally
         self.filter_inner_frame = ctk.CTkFrame(self.filter_row_frame, fg_color="transparent")
         self.filter_inner_frame.place(relx=0.5, rely=0, anchor="n")
-
-        # Filter search BUTTON (with separate image glass2.png)
+        
         filter_search_icon_path = r"image/glass2.png"
         if os.path.exists(filter_search_icon_path):
             filter_icon_img = Image.open(filter_search_icon_path).resize((25, 25), Image.Resampling.LANCZOS)
@@ -242,10 +349,8 @@ class DashboardPage(ctk.CTkFrame):
                 text_color="black",
                 corner_radius=10,
             )
-        # Use grid for filter widgets now
         self.filter_search_button.grid(row=0, column=0, padx=5, pady=5)
 
-        # Expanded list of manga genres for dropdown
         self.genres = [
             "Action", "Adventure", "Comedy", "Drama", "Fantasy", "Romance",
             "Shounen", "Shoujo", "Seinen", "Josei", "Sci-Fi", "Horror",
@@ -253,22 +358,18 @@ class DashboardPage(ctk.CTkFrame):
             "Historical", "Ecchi", "Isekai"
         ]
 
-        # Genre single-select dropdown
         self.genre_option_menu = ctk.CTkOptionMenu(self.filter_inner_frame, values=self.genres)
         self.genre_option_menu.set("Genre")
         self.genre_option_menu.grid(row=0, column=1, padx=5, pady=5)
 
-        # Status dropdown (single select)
         self.status_option = ctk.CTkOptionMenu(self.filter_inner_frame, values=["All", "Ongoing", "Completed", "Hiatus"])
         self.status_option.set("Status")
         self.status_option.grid(row=0, column=2, padx=5, pady=5)
 
-        # Order by dropdown (single select)
         self.order_option = ctk.CTkOptionMenu(self.filter_inner_frame, values=["Popular", "A-Z" , "Z-A", "Update", "Added"])
         self.order_option.set("Order By Default")
         self.order_option.grid(row=0, column=3, padx=5, pady=5)
 
-        # Change dropdown backgrounds to grey (#4b4848)
         grey_bg = "#4b4848"
         self.genre_option_menu.configure(fg_color=grey_bg)
         self.status_option.configure(fg_color=grey_bg)
@@ -279,26 +380,19 @@ class DashboardPage(ctk.CTkFrame):
         
         self.manga_viewer = MangaViewer(self.content_container)
         self.manga_viewer.pack(fill="both", expand=True)
-        
-        # Bookmark and Profile containers (start hidden)
+
+        self.mangalist_section = MangaListSection(self.content_container)
+        self.mangalist_section.pack(fill="x", expand=False, pady=10)
+
         self.bookmark_container = ctk.CTkFrame(self)
         self.profile_container = ctk.CTkFrame(self)
-        # Add more content below the manga viewer inside the scrollable container
-        self.extra_label = ctk.CTkLabel(self.content_container, text="More Content Below Manga Viewer", font=ctk.CTkFont(size=20))
-        self.extra_label.pack(pady=20)
 
-        # Example: add a button below that
-        self.extra_button = ctk.CTkButton(self.content_container, text="Extra Button", command=lambda: print("Extra Button Clicked"))
-        self.extra_button.pack(pady=10)
-
-        # Initialize pages inside containers
         self.bookmark_page = BookmarkPage(self.bookmark_container)
         self.bookmark_page.pack(fill="both", expand=True)
 
         self.profile_page = ProfilePage(self.profile_container)
         self.profile_page.pack(fill="both", expand=True)
 
-        # Set Home button active by default
         self.home_action()
 
     def set_active_button(self, active_btn):
@@ -311,18 +405,14 @@ class DashboardPage(ctk.CTkFrame):
         self.set_active_button(self.home_button)
         self.bookmark_container.pack_forget()
         self.profile_container.pack_forget()
-
-        # Pack filter row and content container in correct order
         self.filter_row_frame.pack(side="top", fill="x", pady=(0, 10))
         self.content_container.pack(fill="both", expand=True)
-
-        # Reset search and filters
         self.search_entry.delete(0, "end")
         self.genre_option_menu.set("Genre")
         self.status_option.set("Status")
         self.order_option.set("Order By Default")
         self.update_filter_visibility()
-        self.controller.title("Home")
+        self.controller.title("Dashboard")
 
     def bookmark_action(self):
         self.set_active_button(self.bookmark_button)
@@ -344,11 +434,9 @@ class DashboardPage(ctk.CTkFrame):
         
     def update_filter_visibility(self):
         if self.active_button == self.home_button:
-            # Show filter widgets
             for idx, widget in enumerate(self.filter_inner_frame.winfo_children()):
                 widget.grid(row=0, column=idx, padx=5, pady=5)
         else:
-            # Hide filter widgets
             for widget in self.filter_inner_frame.winfo_children():
                 widget.grid_remove()
 
@@ -359,16 +447,27 @@ class DashboardPage(ctk.CTkFrame):
     def filter_search_action(self):
         print("Filter search button clicked")
 
-# Run the app
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("Dashboard test")
-        self.geometry("600x700")
+        self.title("Dashboard")
+        self.geometry("1200x900")
 
         self.dashboard = DashboardPage(self, controller=self)
+        self.manga_list_page = MangaListPage(self, controller=self)
+
         self.dashboard.pack(fill="both", expand=True)
-    
+        self.manga_list_page.pack_forget()
+
+    def show_dashboard(self):
+        self.title("Dashboard")
+        self.manga_list_page.pack_forget()
+        self.dashboard.pack(fill="both", expand=True)
+
+    def show_manga_list(self):
+        self.title("Manga List")
+        self.dashboard.pack_forget()
+        self.manga_list_page.pack(fill="both", expand=True)
 
 if __name__ == "__main__":
     ctk.set_appearance_mode("System")

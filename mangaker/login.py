@@ -3,6 +3,7 @@ from tkinter import messagebox
 from PIL import Image, ImageDraw
 from backend1 import authenticate, register_user
 from dashboard import DashboardPage
+from Comic import MangaListPage
 
 
 # Helper function to make image circular
@@ -125,7 +126,6 @@ class Login(ctk.CTkFrame):
             if self.icon_open:
                 self.toggle_password_button.configure(image=self.icon_open)
             self.show_password = True
-
 
 # ------------------------- REGISTER PAGE -------------------------
 class RegisterPage(ctk.CTkFrame):
@@ -319,6 +319,8 @@ class App(ctk.CTk):
         self.register_page = RegisterPage(self.container, self.show_login)
         self.forgot_password_page = ForgotPasswordPage(self.container, self.show_login)
         self.dashboard_page = DashboardPage(self.container, self)
+        self.manga_list_page = MangaListPage(self.container, self)
+        self.manga_list_page.place(relx=0, rely=0, relwidth=1, relheight=1)
 
         for page in (self.login_page, self.register_page, self.forgot_password_page, self.dashboard_page):
             page.place(relx=0, rely=0, relwidth=1, relheight=1)
@@ -341,6 +343,14 @@ class App(ctk.CTk):
         self.title("Home")
         self.dashboard_page.tkraise()
 
+    def show_bookmark(self):
+        self.title("Bookmarks")
+        self.profile_page.tkraise()
+    
+    def show_profile(self):
+        self.title("Profile")
+        self.profile_page.tkraise()
+
     def login_success(self):
         email = self.login_page.email_entry.get()
         password = self.login_page.password_entry.get()
@@ -356,7 +366,10 @@ class App(ctk.CTk):
             self.show_dashboard()
         else:
             messagebox.showerror("Login Failed", message)
-
+    
+    def show_manga_list(self):
+        self.title("Manga List")
+        self.manga_list_page.tkraise()
 
 # ------------------------- RUN APP -------------------------
 if __name__ == "__main__":
