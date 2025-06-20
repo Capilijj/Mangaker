@@ -112,8 +112,8 @@ class ProfilePage(ctk.CTkFrame):
         self.email = self.user_info.get("email", "unknown@gmail.com")
         self.profile_img_path = self.user_info.get("profile_image", None)
 
-        self.username_label.configure(text=f"👤 {self.username}")
-        self.email_label.configure(text=f"📧 {self.email}")
+        self.username_label.configure(text=f" {self.username}")
+        self.email_label.configure(text=f" {self.email}")
         self.set_profile_image(self.profile_img_path)
 
     def logout_action(self):

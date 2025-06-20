@@ -26,7 +26,7 @@ class SignUpPage(ctk.CTkFrame):
 
         #======== background image ========
         try:
-            bg_image = Image.open("image/bg.jpg").resize((1200, 680), Image.Resampling.LANCZOS)
+            bg_image = Image.open("image/bg.jpg").resize((1500, 710), Image.Resampling.LANCZOS)
             self.bg_photo = ctk.CTkImage(light_image=bg_image, size=bg_image.size)
             self.bg_label = ctk.CTkLabel(self, image=self.bg_photo, text="")
             self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
