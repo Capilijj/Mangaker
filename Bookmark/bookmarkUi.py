@@ -131,5 +131,3 @@ class BookmarkPage(ctk.CTkFrame):
         self.display_bookmarks() # Refresh the display on bookmarkUi.py
         if self.on_bookmark_change: # Notify the main app to refresh homepage icons
             self.on_bookmark_change()
-
-
