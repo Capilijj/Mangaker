@@ -1,5 +1,5 @@
 from user_model import get_user_by_email, add_bookmark, remove_bookmark_db, get_bookmarks_by_email, clear_bookmarks
-from users_db import users_db, current_session  # assuming you moved current_session here from users_db
+from users_db import current_session  # assuming you moved current_session here from users_db
 
 # Manga list (placeholder data)
 mangas = [
