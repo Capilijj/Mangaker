@@ -10,9 +10,11 @@ manga_list = [
     {"name": "Wind Breaker", "chapter": 460, "genre": "Action, Sports", "status": "Ongoing", "image": "image/braker.jfif"},
     {"name": "Pokemon", "chapter": 150, "genre": "Adventure, Fantasy", "status": "Ongoing", "image": "image/pokemon.jfif"},
 ]
-
+#----------------------------------------------------------------------------------------------------------------------------------------------
+#                       dito yung hardcoded manga pre, anyway sa admin page natin wala na mga comment tinamad na pero sa main branch meron 
+#----------------------------------------------------------------------------------------------------------------------------------------------
 new_manga_list = [
-    {"name": "Green Green Greens", "chapter": 26, "genre": "Sports, Drama", "status": "Ongoing", "image": "image/greens.jfif", "release_date": datetime.now()},
+   #{"name": "Green Green Greens", "chapter": 26, "genre": "Sports, Drama", "status": "Ongoing", "image": "image/greens.jfif", "release_date": datetime.now()},
 ]
 
 def get_manga_list():
