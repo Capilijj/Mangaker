@@ -2,12 +2,17 @@ from user_model import add_user, get_user_by_email, get_user_by_username
 from users_db import current_session
 import hashlib
 import smtplib
+import os
+from dotenv import load_dotenv  # ✅ import this
 
-# === Email credentials now in backend ===
-SENDER_EMAIL = "justinecapili92@gmail.com"
-APP_PASSWORD = "cwua dtpq cfns eehf"
+# ✅ Load environment variables
+load_dotenv()
 
-# ✅ Step 1: Validation only (no save yet)
+# ✅ Fetch from environment
+SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+APP_PASSWORD = os.getenv("APP_PASSWORD")
+
+# --- Validation logic (no changes needed here) ---
 def validate_user_data(email, username, password, confirm_password, image_path=None):
     if not email or not username or not password or not confirm_password:
         return False, "Please fill in all fields."
@@ -25,7 +30,7 @@ def validate_user_data(email, username, password, confirm_password, image_path=N
         return False, "Username already taken."
     return True, "Validated"
 
-# ✅ Step 2: Save user after OTP is verified
+# --- Finalize registration ---
 def finalize_registration(email, username, password, image_path):
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
     success, message = add_user(email, username, hashed_password, image_path)
@@ -33,10 +38,12 @@ def finalize_registration(email, username, password, image_path):
         current_session["email"] = email
     return success, message
 
-# ✅ Send OTP Email
-
+# --- Send OTP ---
 def send_otp_email(email, otp):
     try:
+        if not SENDER_EMAIL or not APP_PASSWORD:
+            raise ValueError("Missing email credentials in .env")
+
         subject = "Your OTP Verification Code"
         body = f"Your OTP is: {otp}\n\nThis OTP is valid for 5 minutes."
         msg = f"Subject: {subject}\n\n{body}"

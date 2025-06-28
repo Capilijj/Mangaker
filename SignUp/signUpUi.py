@@ -62,7 +62,7 @@ class OtpPopup(ctk.CTkFrame):
                 justify='center',
                 font=("Arial", 24),  # Larger font
                 corner_radius=12,    # Rounder corners
-                fg_color="#272829",
+                fg_color="#FFFFFF",
                 text_color="black",
                 border_width=2,
                 border_color="#0F0F0F"
@@ -110,6 +110,7 @@ class OtpPopup(ctk.CTkFrame):
 
         entered = ''.join(e.get().strip() for e in self.otp_entries)
         if entered == self.otp:
+            self.cancelled = True
             messagebox.showinfo("Verified", "OTP verified successfully.")
             self.destroy()
             self.on_success()
@@ -127,13 +128,25 @@ class OtpPopup(ctk.CTkFrame):
     def countdown(self):
         def run():
             for i in range(300, 0, -1):
-                if self.cancelled:
+                if self.cancelled or not self.winfo_exists():
                     return
                 mins, secs = divmod(i, 60)
-                self.countdown_label.configure(text=f"OTP expires in {mins}:{secs:02}")
+                try:
+                    if self.countdown_label.winfo_exists():
+                        self.countdown_label.configure(text=f"OTP expires in {mins}:{secs:02}")
+                except Exception:
+                    return  # Widget likely destroyed
                 time.sleep(1)
-            self.countdown_label.configure(text="OTP expired.")
+
+            # Final update when time runs out
+            try:
+                if self.countdown_label.winfo_exists():
+                    self.countdown_label.configure(text="OTP expired.")
+            except Exception:
+                pass
+
         threading.Thread(target=run, daemon=True).start()
+
         
 # ======== SignUp Page Class ========
 class SignUpPage(ctk.CTkFrame):

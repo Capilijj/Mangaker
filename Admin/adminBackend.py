@@ -1,8 +1,8 @@
 # << BACKEND NG COMICS PAGE >>
 
 from datetime import datetime, timedelta
-from users_db import current_session  # still used to get current email
-from user_model import get_user_by_email, update_user_profile  # <-- Import the DB helper functions
+from users_db import current_session
+from user_model import add_bookmark, remove_bookmark_db, get_bookmarks_by_email
 
 manga_list = [
     {"name": "Oshi no Ko", "chapter": 75, "genre": "Drama, Supernatural", "status": "Ongoing", "image": "image/oshi.webp"},
@@ -12,12 +12,18 @@ manga_list = [
 ]
 
 new_manga_list = [
-    # Example new release:
-    # {"name": "Green Green Greens", "chapter": 26, "genre": "Sports, Drama", "status": "Ongoing", "image": "image/greens.jfif", "release_date": datetime.now()},
+    {"name": "Green Green Greens", "chapter": 26, "genre": "Sports, Drama", "status": "Ongoing", "image": "image/greens.jfif", "release_date": datetime.now()},
 ]
 
 def get_manga_list():
     return manga_list
+
+def get_new_manga_list():
+    return new_manga_list
+
+def get_all_manga():
+    """Returns all manga from both lists."""
+    return manga_list + new_manga_list
 
 def add_manga(manga_details):
     all_current_mangas = [m.get("name") for m in manga_list] + [m.get("name") for m in new_manga_list]
@@ -42,46 +48,25 @@ def bookmark_manga_admin(manga_to_bookmark):
     if not email:
         return "No user logged in."
 
-    user = get_user_by_email(email)
-    if not user:
-        return "User not found."
+    title = manga_to_bookmark.get("name")
+    if not title:
+        return "Manga title missing."
 
-    user_bookmarks = user.get("bookmarks", [])
-
-    converted_manga = {
-        "title": manga_to_bookmark.get("name"),
-        "genre": manga_to_bookmark.get("genre"),
-        "summary": "N/A",
-        "status": manga_to_bookmark.get("status"),
-        "author": "N/A",
-        "image_path": manga_to_bookmark.get("image"),
-        "chapter": manga_to_bookmark.get("chapter")
-    }
-
-    if any(bm.get("title") == converted_manga["title"] for bm in user_bookmarks):
+    existing = get_bookmarks_by_email(email)
+    if title in existing:
         return "Manga already bookmarked."
 
-    if len(user_bookmarks) >= 50:
-        return "You have reached the maximum of 50 bookmarks."
-
-    user_bookmarks.append(converted_manga)
-    update_user_profile(email, {"bookmarks": user_bookmarks})
-    return "Manga bookmarked successfully!"
+    success, msg = add_bookmark(email, title)
+    return msg
 
 def remove_bookmark_admin(manga_to_remove):
     email = current_session.get("email")
     if not email:
         return "No user logged in."
 
-    user = get_user_by_email(email)
-    if not user:
-        return "User not found."
+    title = manga_to_remove.get("name")
+    if not title:
+        return "Manga title missing."
 
-    user_bookmarks = user.get("bookmarks", [])
-    updated_bookmarks = [bm for bm in user_bookmarks if bm.get("title") != manga_to_remove.get("name")]
-
-    if len(updated_bookmarks) == len(user_bookmarks):
-        return "Bookmark not found."
-
-    update_user_profile(email, {"bookmarks": updated_bookmarks})
-    return "Bookmark removed successfully!"
+    removed = remove_bookmark_db(email, title)
+    return "Bookmark removed successfully!" if removed else "Bookmark not found."

@@ -1,9 +1,14 @@
 import customtkinter as ctk
 from PIL import Image
 from customtkinter import CTkImage
-from Homepage.homeBackend import get_bookmarked_mangas # Import the function
-from Homepage.homeBackend import remove_bookmark 
+from user_model import get_bookmarks_by_email
+from users_db import current_session
+from user_model import remove_bookmark_db
+from Homepage.homeBackend import get_bookmarked_mangas
 import os
+
+# Import your manga list for details lookup
+from Admin.adminBackend import get_all_manga
 
 class BookmarkPage(ctk.CTkFrame):
     def __init__(self, parent, on_bookmark_change=None): # bookmark_change parameter
@@ -47,7 +52,15 @@ class BookmarkPage(ctk.CTkFrame):
         for widget in self.bookmark_display_frame.winfo_children():
             widget.destroy()
 
-        bookmarked_mangas = get_bookmarked_mangas()
+        email = current_session.get("email")
+        if not email:
+            bookmarked_titles = []
+        else:
+            bookmarked_titles = get_bookmarks_by_email(email)
+
+        # Map titles to full manga info using manga_list
+        all_manga = get_all_manga() + get_bookmarked_mangas()
+        bookmarked_mangas = [m for m in all_manga if (m.get("name") in bookmarked_titles) or (m.get("title") in bookmarked_titles)]
 
         if not bookmarked_mangas:
             no_bookmark_label = ctk.CTkLabel(
@@ -97,14 +110,12 @@ class BookmarkPage(ctk.CTkFrame):
         name_label = ctk.CTkLabel(container, text=manga_name, font=ctk.CTkFont(size=16, weight="bold"))
         name_label.grid(row=0, column=1, sticky="sw", pady=(10, 0), padx=10)
 
-    
         if "chapter" in manga:
             chapter_label = ctk.CTkLabel(container, text=f"Chapter {manga['chapter']}", font=ctk.CTkFont(size=14))
             chapter_label.grid(row=1, column=1, sticky="nw", padx=10)
         else:
-             # Add an empty label to maintain grid structure if chapter is absent
+            # Add an empty label to maintain grid structure if chapter is absent
             ctk.CTkLabel(container, text="", font=ctk.CTkFont(size=14)).grid(row=1, column=1, sticky="nw", padx=10)
-
 
         genre_label = ctk.CTkLabel(container, text=f"Genre: {manga_genre}", font=ctk.CTkFont(size=12))
         genre_label.grid(row=2, column=1, sticky="nw", padx=10)
@@ -126,8 +137,14 @@ class BookmarkPage(ctk.CTkFrame):
         remove_bookmark_btn.grid(row=4, column=0, padx=10, pady=(0, 10), sticky="w")
 
     def remove_bookmark_action(self, manga_to_remove):
-        remove_bookmark(manga_to_remove)
-        print(f"Removed bookmark: {manga_to_remove.get('title') or manga_to_remove.get('name')}")
-        self.display_bookmarks() # Refresh the display on bookmarkUi.py
-        if self.on_bookmark_change: # Notify the main app to refresh homepage icons
-            self.on_bookmark_change()
+        email = current_session.get("email")
+        if not email:
+            return
+
+        title = manga_to_remove.get("title") or manga_to_remove.get("name")
+        removed = remove_bookmark_db(email, title)
+        if removed:
+            print(f"Removed bookmark: {title}")
+            self.display_bookmarks()
+            if self.on_bookmark_change:
+                self.on_bookmark_change()

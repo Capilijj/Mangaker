@@ -1,37 +1,56 @@
 import sqlite3
-
-DB_NAME = "user.db" # The name of your existing SQLite database file
+from datetime import datetime, timedelta
+DB_NAME = "user.db"
 
 def get_connection():
-    """
-    Establishes and returns a connection to the SQLite database.
-    This function is now solely responsible for connecting.
-    """
     return sqlite3.connect(DB_NAME)
 
 def init_user_db():
-    """
-    This function will now only perform operations necessary for
-    initializing a connection if the DB file exists, or ensuring
-    basic PRAGMAs are set. It explicitly AVOIDS creating tables.
-    """
-    print(f"Attempting to initialize connection to {DB_NAME}...")
+    print(f"Attempting to initialize or setup {DB_NAME}...")
     try:
         with get_connection() as conn:
-            # You might want to run some PRAGMA commands here if needed,
-            # e.g., to ensure foreign key constraints are enforced.
-            # For example:
-            # cursor = conn.cursor()
-            # cursor.execute("PRAGMA foreign_keys = ON;")
-            # print("Foreign key enforcement enabled.")
-            print(f"Successfully connected to existing database: {DB_NAME}")
-    except sqlite3.Error as e:
-        print(f"Error connecting to database {DB_NAME}: {e}")
-        # Handle the error appropriately, maybe exit the app or show a message
-    # No table creation SQL here anymore.
-    # We assume tables 'users' and 'bookmarks' already exist in user.db
+            cursor = conn.cursor()
 
-# --- Existing functions for user and bookmark operations (remain unchanged) ---
+            # Enable foreign key support
+            cursor.execute("PRAGMA foreign_keys = ON;")
+
+            # Check if 'created_at' column exists
+            cursor.execute("PRAGMA table_info(users);")
+            columns = [row[1] for row in cursor.fetchall()]
+
+            if "created_at" not in columns:
+                # Add column without default, then update existing rows manually
+                cursor.execute("ALTER TABLE users ADD COLUMN created_at DATETIME")
+                cursor.execute("UPDATE users SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL")
+
+            # Create tables if not exist
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY,
+                    email TEXT UNIQUE NOT NULL,
+                    username TEXT UNIQUE NOT NULL,
+                    password TEXT NOT NULL,
+                    profile_image TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS bookmarks (
+                    id INTEGER PRIMARY KEY,
+                    email TEXT NOT NULL,
+                    manga_title TEXT NOT NULL,
+                    UNIQUE(email, manga_title)
+                )
+            ''')
+
+            conn.commit()
+            print(f" Database {DB_NAME} initialized successfully with required tables.")
+
+    except sqlite3.Error as e:
+        print(f" Error initializing database {DB_NAME}: {e}")
+
+# --- USER OPERATIONS ---
 
 def get_next_available_user_id():
     with get_connection() as conn:
@@ -48,12 +67,17 @@ def get_next_available_user_id():
 def add_user(email, username, password, image_path):
     try:
         user_id = get_next_available_user_id()
+
+        # Get Philippine time (UTC+8)
+        ph_time = datetime.utcnow() + timedelta(hours=8)
+        ph_timestamp = ph_time.strftime('%Y-%m-%d %H:%M:%S')
+
         with get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO users (id, email, username, password, profile_image)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (user_id, email, username, password, image_path))
+                INSERT INTO users (id, email, username, password, profile_image, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (user_id, email, username, password, image_path, ph_timestamp))
             conn.commit()
             return True, "User registered successfully!"
     except sqlite3.IntegrityError:
@@ -61,9 +85,10 @@ def add_user(email, username, password, image_path):
     except sqlite3.Error as e:
         return False, f"Database error: {e}"
 
+
 def get_user_by_email(email):
     with get_connection() as conn:
-        conn.row_factory = sqlite3.Row  # This makes rows behave like dictionaries
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
         user_data = cursor.fetchone()
@@ -92,6 +117,8 @@ def update_user_profile(email, updates):
         conn.commit()
         return True, "Profile updated successfully!"
 
+# --- BOOKMARK OPERATIONS ---
+
 def get_next_available_bookmark_id():
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -106,20 +133,28 @@ def get_next_available_bookmark_id():
 
 def add_bookmark(email, manga_title):
     try:
-        next_id = get_next_available_bookmark_id()
         with get_connection() as conn:
             cursor = conn.cursor()
+
+            cursor.execute("SELECT COUNT(*) FROM bookmarks WHERE email = ?", (email,))
+            count = cursor.fetchone()[0]
+            if count >= 50:
+                return False, "Bookmark limit reached (max 50)."
+
+            # Check if already exists
+            cursor.execute("SELECT 1 FROM bookmarks WHERE email = ? AND manga_title = ?", (email, manga_title))
+            if cursor.fetchone():
+                return False, "Manga is already bookmarked."
+
+            next_id = get_next_available_bookmark_id()
             cursor.execute('''
                 INSERT INTO bookmarks (id, email, manga_title)
                 VALUES (?, ?, ?)
             ''', (next_id, email, manga_title))
             conn.commit()
             return True, "Manga bookmarked successfully!"
-    except sqlite3.IntegrityError:
-        return False, "Manga is already bookmarked."
     except sqlite3.Error as e:
         return False, f"Database error: {e}"
-
 
 def remove_bookmark_db(email, manga_title):
     with get_connection() as conn:
@@ -150,3 +185,22 @@ def clear_bookmarks(email):
         ''', (email,))
         conn.commit()
         return True
+
+def get_all_bookmarks_grouped_by_email():
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT email, GROUP_CONCAT(manga_title, ', ') as bookmarks
+            FROM bookmarks
+            GROUP BY email
+        ''')
+        rows = cursor.fetchall()
+
+        grouped = {}
+        for email, bookmark_string in rows:
+            bookmarks = bookmark_string.split(', ') if bookmark_string else []
+            grouped[email] = bookmarks
+
+        return grouped
+
+

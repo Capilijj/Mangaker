@@ -128,23 +128,50 @@ def get_order_options():
     return ["Popular", "A-Z", "Z-A", "Update", "Added"]
 
 # --- Bookmarks ---
+
 def bookmark_manga(manga):
+    """
+    Adds a manga to the user's bookmarks using the title or name.
+    """
     email = current_session.get("email")
     if not email:
         return "No user logged in."
-    return add_bookmark(email, manga)
+
+    title = manga.get("title") or manga.get("name")
+    return add_bookmark(email, title)
 
 def remove_bookmark(manga):
+    """
+    Removes a manga from bookmarks by title or name.
+    """
     email = current_session.get("email")
     if not email:
         return "No user logged in."
-    return remove_bookmark_db(email, manga)
+
+    title = manga.get("title") or manga.get("name")
+    return remove_bookmark_db(email, title)
 
 def get_bookmarked_mangas():
+    """
+    Returns a list of full manga dictionaries for the user's bookmarks.
+    """
     email = current_session.get("email")
     if not email:
         return []
-    return get_bookmarks_by_email(email)
+
+    bookmarked_titles = get_bookmarks_by_email(email)
+
+    # Combine all manga sources
+    all_manga = mangas + get_popular_manga() + get_latest_update()
+
+    # Match only by title or name
+    resolved_bookmarks = []
+    for m in all_manga:
+        title = m.get("title") or m.get("name")
+        if title in bookmarked_titles:
+            resolved_bookmarks.append(m)
+
+    return resolved_bookmarks
 
 def remove_all_bookmarks():
     email = current_session.get("email")

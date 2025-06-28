@@ -1,3 +1,8 @@
+#---------------------------------------------------
+#install ka nito pip install python-dotenv
+#---------------------------------------------------
+
+
 #ang haba ng code ko pre sa main kasi nandun yung ui ko na top bar header yung may
 # Home, bookmark, comics, profile best way daw to para 
 # makita yung top bar sa ibat ibang page tyka para hnd sobrang humaba pa yung home page natin
