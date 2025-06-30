@@ -152,18 +152,22 @@ class ProfilePage(ctk.CTkFrame):
         def submit_request():
             value = entry.get().strip()
             if not value:
-                print("⚠️ Empty request.")
+                messagebox.showerror("Input Error", "Request cannot be empty.")
+                return
             elif len(value) > 15:
-                print("⚠️ Max 15 characters.")
+                messagebox.showerror("Input Error", "Request must be 15 characters or less.")
+                return
             else:
                 success, msg = buffer_manga_request(value, self.email)
-            if success:
-                messagebox.showinfo("Request Submitted", 
-                    "✅ Your request has been submitted successfully!\n\nPlease wait while our admin reviews it. Thank you for your suggestion!")
-                self.request_popup_container.destroy()
-                self.request_popup_container = None
-            else:
-                messagebox.showerror("Request Failed", msg)
+                if success:
+                    messagebox.showinfo(
+                        "Request Submitted",
+                        "✅ Your request has been submitted successfully!\n\nPlease wait while our admin reviews it. Thank you for your suggestion!"
+                    )
+                    self.request_popup_container.destroy()
+                    self.request_popup_container = None
+                else:
+                    messagebox.showerror("Request Failed", msg)
 
 
         submit_btn = ctk.CTkButton(self.request_popup_container, text="Submit", command=submit_request,
