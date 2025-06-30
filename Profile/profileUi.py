@@ -2,18 +2,10 @@ import customtkinter as ctk
 from tkinter import filedialog
 from PIL import Image, ImageDraw
 from customtkinter import CTkImage
+from Profile.profileBackend import buffer_manga_request, get_user_prof, save_user_prof
+from tkinter import messagebox
 import os
 import shutil
-import uuid
-
-# ==== Import backend ====
-try:
-    from Profile.profileBackend import get_user_prof, save_user_prof
-except ImportError:
-    def get_user_prof():
-        return {"username": "Unknown User", "email": "unknown@gmail.com"}
-    def save_user_prof(profile):
-        pass
 
 # ==== Circle Image Utility ====
 def make_circle(img):
@@ -34,48 +26,48 @@ class ProfilePage(ctk.CTkFrame):
         self.on_bookmark = on_bookmark
         self.topbar = topbar
 
-        # ==== Load user info ====
         self.user_info = get_user_prof()
         self.username = self.user_info.get("username", "Unknown User")
         self.email = self.user_info.get("email", "unknown@gmail.com")
         self.profile_img_path = self.user_info.get("profile_image", None)
 
-        # ==== Title ====
-        self.title_label = ctk.CTkLabel(self, text="Profile", font=ctk.CTkFont(size=28, weight="bold"), text_color="white")
-        self.title_label.pack(pady=(40, 10))
-
-        # ==== Profile Image ====
+        # ==== Profile Circle Image ====
         self.profile_img_label = ctk.CTkLabel(self, text="")
-        self.profile_img_label.pack(pady=(0, 10))
-
-        # ==== Username Display Only ====
-        self.username_label = ctk.CTkLabel(self, text=f" {self.username}", font=ctk.CTkFont(size=20, weight="bold"), text_color="#39ff14")
-        self.username_label.pack(pady=(0, 5))
-
-        # ==== Email Display ====
-        self.email_label = ctk.CTkLabel(self, text=f" {self.email}", font=ctk.CTkFont(size=16), text_color="white")
-        self.email_label.pack(pady=(0, 25))
-
-        # ==== Buttons ====
-        self.button_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.button_frame.pack(pady=(0, 20))
-
-        button_width = 200
-
-        self.upload_btn = ctk.CTkButton(self.button_frame, text="Update Photo", command=self.upload_photo,
-                                        width=button_width, height=45, corner_radius=12,
-                                        fg_color="#39ff14", hover_color="#28c20e",
-                                        text_color="black", font=ctk.CTkFont(size=16, weight="bold"))
-        self.upload_btn.pack(pady=(0, 15))
-
-        self.logout_btn = ctk.CTkButton(self.button_frame, text="Log Out", command=self.logout_action,
-                                        width=button_width, height=45, corner_radius=12,
-                                        fg_color="#39ff14", hover_color="#28c20e",
-                                        text_color="black", font=ctk.CTkFont(size=16, weight="bold"))
-        self.logout_btn.pack()
-
-        # ==== Load Profile Image ====
+        self.profile_img_label.pack(pady=(40, 10))
         self.set_profile_image(self.profile_img_path)
+
+        # ==== Nickname and Email ====
+        self.nickname_label = ctk.CTkLabel(self, text=self.username, font=ctk.CTkFont(size=20, weight="bold"), text_color="#39ff14")
+        self.nickname_label.pack()
+
+        self.email_label = ctk.CTkLabel(self, text=self.email, font=ctk.CTkFont(size=16), text_color="white")
+        self.email_label.pack(pady=(0, 20))
+
+        # ==== Button Group ====
+        button_style = {
+            "width": 200,
+            "height": 40,
+            "corner_radius": 10,
+            "fg_color": "#39ff14",
+            "hover_color": "#167e03",
+            "text_color": "black"
+        }
+
+        self.update_nick_btn = ctk.CTkButton(self, text="Update Name", command=self.toggle_nickname_entry, **button_style)
+        self.update_nick_btn.pack(pady=5)
+
+        self.update_photo_btn = ctk.CTkButton(self, text="Update Photo", command=self.upload_photo, **button_style)
+        self.update_photo_btn.pack(pady=5)
+
+        self.request_manga_btn = ctk.CTkButton(self, text="Request Manga", command=self.toggle_request_popup, **button_style)
+        self.request_manga_btn.pack(pady=5)
+
+        self.logout_btn = ctk.CTkButton(self, text="Log Out", command=self.logout_action, **button_style)
+        self.logout_btn.pack(pady=5)
+
+        # ==== Inline Popups ====
+        self.nickname_entry_container = None
+        self.request_popup_container = None
 
     def set_profile_image(self, img_path):
         if img_path and os.path.exists(img_path):
@@ -87,22 +79,106 @@ class ProfilePage(ctk.CTkFrame):
         self.profile_img_label.configure(image=ctk_img)
         self.profile_img_label.image = ctk_img
 
+    def refresh_profile_info(self):
+        self.user_info = get_user_prof()
+        self.username = self.user_info.get("username", "Unknown User")
+        self.email = self.user_info.get("email", "unknown@gmail.com")
+        self.profile_img_path = self.user_info.get("profile_image", None)
+
+        self.nickname_label.configure(text=self.username)
+        self.email_label.configure(text=self.email)
+        self.set_profile_image(self.profile_img_path)
+
+    def toggle_nickname_entry(self):
+        if self.nickname_entry_container:
+            self.nickname_entry_container.destroy()
+            self.nickname_entry_container = None
+            return
+
+        self.nickname_entry_container = ctk.CTkFrame(self, fg_color="#2b2b2b", corner_radius=12)
+        self.nickname_entry_container.place(relx=0.5, rely=0.5, anchor="center")
+        self.nickname_entry_container.configure(width=300, height=150, border_width=2, border_color="#39ff14")
+
+        # ❌ Close Button
+        close_btn = ctk.CTkButton(self.nickname_entry_container, text="❌", width=24, height=24,
+                                  font=ctk.CTkFont(size=14), corner_radius=100,
+                                  fg_color="transparent", hover_color="#333",
+                                  command=lambda: self.nickname_entry_container.destroy())
+        close_btn.place(relx=1, rely=0, anchor="ne", x=-5, y=5)
+
+        # Entry Field
+        entry = ctk.CTkEntry(self.nickname_entry_container, placeholder_text="New Nickname", width=200)
+        entry.place(relx=0.5, rely=0.5, anchor="center", y=-10)
+
+        # Save Button
+        def save_nickname():
+            new_name = entry.get().strip()
+            if new_name:
+                success, msg = save_user_prof({"username": new_name})
+                print("✅" if success else "❌", msg)
+                if success:
+                    self.refresh_profile_info()
+                    if self.topbar:
+                        self.topbar.refresh_profile_icon()
+                self.nickname_entry_container.destroy()
+                self.nickname_entry_container = None
+
+        save_btn = ctk.CTkButton(self.nickname_entry_container, text="Save", command=save_nickname,
+                                 width=100, height=35, fg_color="#28c20e", hover_color="#167e03", text_color="black")
+        save_btn.place(relx=0.5, rely=0.5, anchor="center", y=35)
+
+    def toggle_request_popup(self):
+        if self.request_popup_container:
+            self.request_popup_container.destroy()
+            self.request_popup_container = None
+            return
+
+        self.request_popup_container = ctk.CTkFrame(self, fg_color="#1f1f1f", corner_radius=12)
+        self.request_popup_container.place(relx=0.5, rely=0.5, anchor="center")
+        self.request_popup_container.configure(width=330, height=180, border_width=2, border_color="#39ff14")
+
+        close_btn = ctk.CTkButton(self.request_popup_container, text="❌", width=24, height=24,
+                                  font=ctk.CTkFont(size=14), corner_radius=100,
+                                  fg_color="transparent", hover_color="#333",
+                                  command=lambda: self.request_popup_container.destroy())
+        close_btn.place(relx=1, rely=0, anchor="ne", x=-5, y=5)
+
+        label = ctk.CTkLabel(self.request_popup_container, text="Request Your Manga", text_color="white")
+        label.place(relx=0.5, rely=0.2, anchor="center")
+
+        entry = ctk.CTkEntry(self.request_popup_container, width=220)
+        entry.place(relx=0.5, rely=0.5, anchor="center")
+
+        def submit_request():
+            value = entry.get().strip()
+            if not value:
+                print("⚠️ Empty request.")
+            elif len(value) > 15:
+                print("⚠️ Max 15 characters.")
+            else:
+                success, msg = buffer_manga_request(value, self.email)
+            if success:
+                messagebox.showinfo("Request Submitted", 
+                    "✅ Your request has been submitted successfully!\n\nPlease wait while our admin reviews it. Thank you for your suggestion!")
+                self.request_popup_container.destroy()
+                self.request_popup_container = None
+            else:
+                messagebox.showerror("Request Failed", msg)
+
+
+        submit_btn = ctk.CTkButton(self.request_popup_container, text="Submit", command=submit_request,
+                                   fg_color="#39ff14", hover_color="#167e03", text_color="black")
+        submit_btn.place(relx=0.5, rely=0.75, anchor="center")
+
     def upload_photo(self):
         file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.gif;*.bmp")])
         if file_path:
-            save_dir = "images"  # <<== Change folder name to 'images' para consistent
+            save_dir = "images"
             os.makedirs(save_dir, exist_ok=True)
-
-            original_name = os.path.basename(file_path)
-            name, ext = os.path.splitext(original_name)
-
-            # Avoid double "_profile"
+            name, ext = os.path.splitext(os.path.basename(file_path))
             filename = f"{name}{ext}"
-            relative_path = os.path.join(save_dir, filename)  # e.g., images/123_profile.jpg
-
+            relative_path = os.path.join(save_dir, filename)
             shutil.copy(file_path, relative_path)
-
-            # ✅ Save relative path only, not full system path
             self.user_info["profile_image"] = relative_path
 
             try:
@@ -112,20 +188,8 @@ class ProfilePage(ctk.CTkFrame):
                 print("❌ Failed to save profile:", str(e))
 
             self.set_profile_image(relative_path)
-
             if self.topbar:
                 self.topbar.refresh_profile_icon()
-
-
-    def refresh_profile_info(self):
-        self.user_info = get_user_prof()
-        self.username = self.user_info.get("username", "Unknown User")
-        self.email = self.user_info.get("email", "unknown@gmail.com")
-        self.profile_img_path = self.user_info.get("profile_image", None)
-
-        self.username_label.configure(text=f" {self.username}")
-        self.email_label.configure(text=f" {self.email}")
-        self.set_profile_image(self.profile_img_path)
 
     def logout_action(self):
         print("[Logging out...]")
@@ -133,21 +197,3 @@ class ProfilePage(ctk.CTkFrame):
             self.on_logout()
         else:
             print("No logout callback provided.")
-
-# ==== Standalone Test ====
-if __name__ == "__main__":
-    ctk.set_appearance_mode("System")
-    ctk.set_default_color_theme("green")
-    app = ctk.CTk()
-    app.geometry("400x700")
-
-    def go_to_login():
-        from Login.loginUi import LoginPage
-        app.title("Login")
-        for widget in app.winfo_children():
-            widget.destroy()
-        LoginPage(app, None, None, lambda: print("Go to dashboard")).pack(fill="both", expand=True)
-
-    profile = ProfilePage(app, on_logout=go_to_login)
-    profile.pack(fill="both", expand=True)
-    app.mainloop()

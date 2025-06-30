@@ -45,7 +45,12 @@ def send_otp_email(email, otp):
             raise ValueError("Missing email credentials in .env")
 
         subject = "Your OTP Verification Code"
-        body = f"Your OTP is: {otp}\n\nThis OTP is valid for 5 minutes."
+        body = (
+            "Welcome to James Mangaker!\n\n"
+            "Thank you for signing up.\n\n"
+            f"Your OTP is: {otp}\n\n"
+            "This OTP is valid for 5 minutes."
+        )
         msg = f"Subject: {subject}\n\n{body}"
 
         server = smtplib.SMTP("smtp.gmail.com", 587)

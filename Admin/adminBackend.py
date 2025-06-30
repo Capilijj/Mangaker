@@ -1,9 +1,10 @@
-# << BACKEND NG COMICS PAGE >>
+# === BACKEND NG COMICS PAGE ===
 
 from datetime import datetime, timedelta
 from users_db import current_session
 from user_model import add_bookmark, remove_bookmark_db, get_bookmarks_by_email
 
+# === STATIC MANGA LIST (existing content) ===
 manga_list = [
     {"name": "Oshi no Ko", "chapter": 75, "genre": "Drama, Supernatural", "status": "Ongoing", "image": "image/oshi.webp"},
     {"name": "Solo Leveling", "chapter": 179, "genre": "Action, Fantasy", "status": "Completed", "image": "image/solo.jpg"},
@@ -11,20 +12,25 @@ manga_list = [
     {"name": "Pokemon", "chapter": 150, "genre": "Adventure, Fantasy", "status": "Ongoing", "image": "image/pokemon.jfif"},
 ]
 
+# === DYNAMICALLY ADDED NEW MANGA LIST ===
 new_manga_list = [
-   #{"name": "Green Green Greens", "chapter": 26, "genre": "Sports, Drama", "status": "Ongoing", "image": "image/greens.jfif", "release_date": datetime.now()},
+    # {"name": "Green Green Greens", "chapter": 26, "genre": "Sports, Drama", "status": "Ongoing", "image": "image/greens.jfif", "release_date": datetime.now()},
 ]
 
+# === Returns static manga list ===
 def get_manga_list():
     return manga_list
 
+# === Returns new manga list added via add_manga ===
 def get_new_manga_list():
     return new_manga_list
 
+# === Combine both static and new manga into one ===
 def get_all_manga():
     """Returns all manga from both lists."""
     return manga_list + new_manga_list
 
+# === Adds a new manga into new_manga_list with release date ===
 def add_manga(manga_details):
     all_current_mangas = [m.get("name") for m in manga_list] + [m.get("name") for m in new_manga_list]
     if manga_details.get("name") in all_current_mangas:
@@ -34,6 +40,7 @@ def add_manga(manga_details):
     new_manga_list.append(manga_details)
     return True, "New manga added successfully!"
 
+# === Filters newly added manga based on recent release dates ===
 def get_new_releases_backend(days_ago=30, limit=None):
     threshold_date = datetime.now() - timedelta(days=days_ago)
     new_releases = [
@@ -43,6 +50,7 @@ def get_new_releases_backend(days_ago=30, limit=None):
     new_releases.sort(key=lambda x: x.get("release_date", datetime.min), reverse=True)
     return new_releases[:limit] if limit else new_releases
 
+# === Bookmarks a manga for the currently logged-in user ===
 def bookmark_manga_admin(manga_to_bookmark):
     email = current_session.get("email")
     if not email:
@@ -59,6 +67,7 @@ def bookmark_manga_admin(manga_to_bookmark):
     success, msg = add_bookmark(email, title)
     return msg
 
+# === Removes a bookmarked manga for the current user ===
 def remove_bookmark_admin(manga_to_remove):
     email = current_session.get("email")
     if not email:
