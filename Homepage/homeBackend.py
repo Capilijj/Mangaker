@@ -1,4 +1,5 @@
-from users_db import users_db, current_session
+from user_model import get_user_by_email, add_bookmark, remove_bookmark_db, get_bookmarks_by_email, clear_bookmarks
+from users_db import current_session  # assuming you moved current_session here from users_db
 
 # Manga list (placeholder data)
 mangas = [
@@ -13,7 +14,7 @@ mangas = [
     {
         "title": "One Piece",
         "genre": "Adventure, Fantasy, Action",
-        "summary": "Monkey D. Luffy, a rubber-powered pirate, sails the seas in search of the legendary One Piece. ",
+        "summary": "Monkey D. Luffy, a rubber-powered pirate, sails the seas in search of the legendary One Piece.",
         "status": "Ongoing",
         "author": "Eiichiro Oda",
         "image_path": r"image/onepiece.webp"
@@ -45,7 +46,8 @@ mangas = [
     {
         "title": "Jujutsu Kaisen",
         "genre": "Action, Supernatural, Dark Fantasy",
-        "summary":"Gojo faces off against Sukuna in a fierce clash to  Who's the strongest sorcerer of their era.",
+        "summary": "Gojo faces off against Sukuna in a fierce clash to determine who's the strongest sorcerer of their era.",
+        "status": "Ongoing",
         "author": "Gege Akutami",
         "image_path": r"image/jujutsu.webp"
     },
@@ -76,8 +78,8 @@ def get_popular_manga():
 def get_latest_update():
     return [
         {"name": "Demon Slayer", "chapter": 205, "genre": "Action, Supernatural", "status": "Completed", "image": "image/demonslayer.jpg"},
-        {"name": "Mashle: Magic and Muscles", "chapter": 162, "genre": "Action, Comedy, Fantasy", "status": "Completed", "image": "image/magic.jpg"}, 
-        {"name": "Dr. Stone", "chapter": 232, "genre": "Sci-Fi, Adventure", "status": "Completed", "image": "image/drstone.jpg"},   
+        {"name": "Mashle: Magic and Muscles", "chapter": 162, "genre": "Action, Comedy, Fantasy", "status": "Completed", "image": "image/magic.jpg"},
+        {"name": "Dr. Stone", "chapter": 232, "genre": "Sci-Fi, Adventure", "status": "Completed", "image": "image/drstone.jpg"},
         {"name": "Blue Lock", "chapter": 268, "genre": "Sports, Drama", "status": "Ongoing", "image": "image/blue.jpg"},
         {"name": "Tokyo Revengers", "chapter": 278, "genre": "Action, Supernatural", "status": "Completed", "image": "image/TokyoRever.jpg"},
         {"name": "Chainsaw Man", "chapter": 162, "genre": "Action, Supernatural, Horror", "status": "Ongoing", "image": "image/chainsawman.webp"},
@@ -89,12 +91,21 @@ def get_latest_update():
 # --- User Profile ---
 def get_user_prof():
     email = current_session.get("email")
-    if email in users_db:
+    if not email:
         return {
-            "username": users_db[email].get("username", "Unknown User"),
-            "email": email,
-            "profile_image": users_db[email].get("profile_image", None)  
+            "username": "Unknown User",
+            "email": "unknown@gmail.com",
+            "profile_image": None
         }
+
+    user = get_user_by_email(email)
+    if user:
+        return {
+            "username": user["username"],
+            "email": user["email"],
+            "profile_image": user["profile_image"]
+        }
+
     return {
         "username": "Unknown User",
         "email": "unknown@gmail.com",
@@ -117,35 +128,53 @@ def get_order_options():
     return ["Popular", "A-Z", "Z-A", "Update", "Added"]
 
 # --- Bookmarks ---
+
 def bookmark_manga(manga):
+    """
+    Adds a manga to the user's bookmarks using the title or name.
+    """
     email = current_session.get("email")
-    if not email or email not in users_db:
+    if not email:
         return "No user logged in."
-    
-    # Check if the manga is already bookmarked
-    if manga in users_db[email]["bookmarks"]:
-        return "Manga is already bookmarked."
-    
-    # Enforce the 50-bookmark limit
-    if len(users_db[email]["bookmarks"]) >= 50:
-        return "You have reached the maximum of 50 bookmarks."
-        
-    users_db[email]["bookmarks"].append(manga)
-    return "Manga bookmarked successfully!"
 
-    # Remove Bookmark logic
+    title = manga.get("title") or manga.get("name")
+    return add_bookmark(email, title)
+
 def remove_bookmark(manga):
+    """
+    Removes a manga from bookmarks by title or name.
+    """
     email = current_session.get("email")
-    if not email or email not in users_db:
+    if not email:
         return "No user logged in."
-    if manga in users_db[email]["bookmarks"]:
-        users_db[email]["bookmarks"].remove(manga)
-    return "Manga un-bookmarked successfully!"
 
-    #get Bookmark logic
+    title = manga.get("title") or manga.get("name")
+    return remove_bookmark_db(email, title)
+
 def get_bookmarked_mangas():
+    """
+    Returns a list of full manga dictionaries for the user's bookmarks.
+    """
     email = current_session.get("email")
-    if email in users_db:
-        return users_db[email].get("bookmarks", [])
-    return []
+    if not email:
+        return []
 
+    bookmarked_titles = get_bookmarks_by_email(email)
+
+    # Combine all manga sources
+    all_manga = mangas + get_popular_manga() + get_latest_update()
+
+    # Match only by title or name
+    resolved_bookmarks = []
+    for m in all_manga:
+        title = m.get("title") or m.get("name")
+        if title in bookmarked_titles:
+            resolved_bookmarks.append(m)
+
+    return resolved_bookmarks
+
+def remove_all_bookmarks():
+    email = current_session.get("email")
+    if not email:
+        return False, "No user logged in."
+    return clear_bookmarks(email)

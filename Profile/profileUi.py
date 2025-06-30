@@ -4,13 +4,14 @@ from PIL import Image, ImageDraw
 from customtkinter import CTkImage
 import os
 import shutil
+import uuid
 
 # ==== Import backend ====
 try:
     from Profile.profileBackend import get_user_prof, save_user_prof
 except ImportError:
     def get_user_prof():
-        return {"username": "Unknown User", "email": "unknown@gmail.com", }
+        return {"username": "Unknown User", "email": "unknown@gmail.com"}
     def save_user_prof(profile):
         pass
 
@@ -47,7 +48,7 @@ class ProfilePage(ctk.CTkFrame):
         self.profile_img_label = ctk.CTkLabel(self, text="")
         self.profile_img_label.pack(pady=(0, 10))
 
-        # ==== Username Display Only (No Editing) ====
+        # ==== Username Display Only ====
         self.username_label = ctk.CTkLabel(self, text=f" {self.username}", font=ctk.CTkFont(size=20, weight="bold"), text_color="#39ff14")
         self.username_label.pack(pady=(0, 5))
 
@@ -55,22 +56,25 @@ class ProfilePage(ctk.CTkFrame):
         self.email_label = ctk.CTkLabel(self, text=f" {self.email}", font=ctk.CTkFont(size=16), text_color="white")
         self.email_label.pack(pady=(0, 25))
 
-
         # ==== Buttons ====
         self.button_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.button_frame.pack(pady=(0, 20))
 
         button_width = 200
 
-        # ==== Upload Button ====
-        self.upload_btn = ctk.CTkButton(self.button_frame, text="Update Photo", command=self.upload_photo, width=button_width,height=45, corner_radius=12, fg_color="#39ff14", hover_color="#28c20e", text_color="black", font=ctk.CTkFont(size=16, weight="bold"))
+        self.upload_btn = ctk.CTkButton(self.button_frame, text="Update Photo", command=self.upload_photo,
+                                        width=button_width, height=45, corner_radius=12,
+                                        fg_color="#39ff14", hover_color="#28c20e",
+                                        text_color="black", font=ctk.CTkFont(size=16, weight="bold"))
         self.upload_btn.pack(pady=(0, 15))
 
-        # ==== Logout Button ====
-        self.logout_btn = ctk.CTkButton(self.button_frame,text="Log Out",command=self.logout_action, width=button_width,height=45,corner_radius=12,fg_color="#39ff14", hover_color="#28c20e", text_color="black",font=ctk.CTkFont(size=16, weight="bold"))
+        self.logout_btn = ctk.CTkButton(self.button_frame, text="Log Out", command=self.logout_action,
+                                        width=button_width, height=45, corner_radius=12,
+                                        fg_color="#39ff14", hover_color="#28c20e",
+                                        text_color="black", font=ctk.CTkFont(size=16, weight="bold"))
         self.logout_btn.pack()
 
-        # ==== Load Image ====
+        # ==== Load Profile Image ====
         self.set_profile_image(self.profile_img_path)
 
     def set_profile_image(self, img_path):
@@ -86,25 +90,32 @@ class ProfilePage(ctk.CTkFrame):
     def upload_photo(self):
         file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.gif;*.bmp")])
         if file_path:
-            save_dir = "user_images"
+            save_dir = "images"  # <<== Change folder name to 'images' para consistent
             os.makedirs(save_dir, exist_ok=True)
-            ext = os.path.splitext(file_path)[1]
-            username = self.user_info.get("username", "user")
-            save_path = os.path.join(save_dir, f"{username}_profile{ext}")
-            shutil.copy(file_path, save_path)
 
-            # 🔄 Auto-update backend and UI
-            self.user_info["profile_image"] = save_path
+            original_name = os.path.basename(file_path)
+            name, ext = os.path.splitext(original_name)
+
+            # Avoid double "_profile"
+            filename = f"{name}{ext}"
+            relative_path = os.path.join(save_dir, filename)  # e.g., images/123_profile.jpg
+
+            shutil.copy(file_path, relative_path)
+
+            # ✅ Save relative path only, not full system path
+            self.user_info["profile_image"] = relative_path
+
             try:
                 save_user_prof(self.user_info)
-                print("Profile updated automatically.")
+                print("✅ Profile image updated:", relative_path)
             except Exception as e:
-                print(" Failed to auto-save profile:", str(e))
+                print("❌ Failed to save profile:", str(e))
 
-            self.set_profile_image(save_path)
-            
+            self.set_profile_image(relative_path)
+
             if self.topbar:
                 self.topbar.refresh_profile_icon()
+
 
     def refresh_profile_info(self):
         self.user_info = get_user_prof()
@@ -117,7 +128,7 @@ class ProfilePage(ctk.CTkFrame):
         self.set_profile_image(self.profile_img_path)
 
     def logout_action(self):
-        print("[Logging out...")
+        print("[Logging out...]")
         if self.on_logout:
             self.on_logout()
         else:

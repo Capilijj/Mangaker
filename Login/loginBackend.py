@@ -1,39 +1,35 @@
-from users_db import users_db, current_session
+from user_model import get_user_by_email
+from users_db import current_session
+import hashlib
 
 def authenticate(email, password):
-    #=========================================================================================
-    #                                 User Authentication Logic                              =
-    #=========================================================================================
-    # ---- Check if email field is empty ----
     if not email:
         return False, "Please enter your email."
-    # ---- Check if password field is empty ----
     if not password:
         return False, "Please enter your password."
-    # ---- Check if email is registered in the database ----
-    if email not in users_db:
+
+    user = get_user_by_email(email)
+    if not user:
         return False, "Email not registered."
-    # ---- Verify if the provided password matches the registered password ----
-    if users_db[email]["password"] != password:
+    # Hash the entered password for comparison
+    hashed_input = hashlib.sha256(password.encode()).hexdigest()
+    if user["password"] != hashed_input:
         return False, "Incorrect password."
 
-    # ---- Set the current session email upon successful login ----
     current_session["email"] = email
     return True, "Login successful."
 
 def get_user_prof():
-    #=========================================================================================
-    #                                 Retrieve User Profile Information                     =
-    #=========================================================================================
-    email = current_session.get("email") # ---- Get the email from the current session ----
-    if email in users_db:
-        # ---- Return user's username, email, and profile image if found ----
+    email = current_session.get("email")
+    user = get_user_by_email(email) if email else None
+
+    if user:
         return {
-            "username": users_db[email].get("username", "Unknown User"),
-            "email": email,
-            "profile_image": users_db[email].get("profile_image", None)
+            "username": user["username"],
+            "email": user["email"],
+            "profile_image": user["profile_image"]
         }
-    # ---- Return default values if user email is not in session or not found in db ----
+
     return {
         "username": "Unknown User",
         "email": "unknown@gmail.com",

@@ -1,42 +1,59 @@
-#=========================================================
-# This file handles the backend logic for user registration.
-#=========================================================
+from user_model import add_user, get_user_by_email, get_user_by_username
+from users_db import current_session
+import hashlib
+import smtplib
+import os
+from dotenv import load_dotenv  # ✅ import this
 
-from users_db import users_db, current_session
+# ✅ Load environment variables
+load_dotenv()
 
-def register_user(email, username, password, confirm_password, image_path=None):
-    #=========================================================================================
-    #                                 User Registration Logic                                =
-    #=========================================================================================
-    # ---- Check if all required fields are filled ----
+# ✅ Fetch from environment
+SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+APP_PASSWORD = os.getenv("APP_PASSWORD")
+
+# --- Validation logic (no changes needed here) ---
+def validate_user_data(email, username, password, confirm_password, image_path=None):
     if not email or not username or not password or not confirm_password:
         return False, "Please fill in all fields."
-
-    # ---- Ensure a profile photo is uploaded ----
     if not image_path:
         return False, "Please upload a profile photo."
-
-    # ---- Validate if the email is a Gmail address ----
+    if not (6 <= len(password) <= 8):
+        return False, "Password must be 6 char/num."
     if not email.endswith("@gmail.com"):
-        return False, "Email must be a Gmail address (ending with @gmail.com)."
-
-    # ---- Check if passwords match ----
+        return False, "Please use a Valid Gmail address."
     if password != confirm_password:
         return False, "Passwords do not match."
-
-    # ---- Check if the email is already registered ----
-    if email in users_db:
+    if get_user_by_email(email):
         return False, "Email already registered."
+    if get_user_by_username(username):
+        return False, "Username already taken."
+    return True, "Validated"
 
-    # ---- Store new user information in the database (users_db acts as an in-memory db) ----
-    users_db[email] = {
-        "username": username,
-        "password": password,
-        "profile_image": image_path,
-        "bookmarks": [] # ---- Initialize an empty list for user bookmarks ----
-    }
+# --- Finalize registration ---
+def finalize_registration(email, username, password, image_path):
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+    success, message = add_user(email, username, hashed_password, image_path)
+    if success:
+        current_session["email"] = email
+    return success, message
 
-    # ---- Optional: Automatically log in the user after successful signup ----
-    current_session["email"] = email
+# --- Send OTP ---
+def send_otp_email(email, otp):
+    try:
+        if not SENDER_EMAIL or not APP_PASSWORD:
+            raise ValueError("Missing email credentials in .env")
 
-    return True, "Account created successfully!"
+        subject = "Your OTP Verification Code"
+        body = f"Your OTP is: {otp}\n\nThis OTP is valid for 5 minutes."
+        msg = f"Subject: {subject}\n\n{body}"
+
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(SENDER_EMAIL, APP_PASSWORD)
+        server.sendmail(SENDER_EMAIL, email, msg)
+        server.quit()
+        return True
+    except Exception as e:
+        print("Failed to send OTP email:", e)
+        return False
