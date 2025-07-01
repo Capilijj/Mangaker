@@ -1,3 +1,5 @@
+import sqlite3
+
 # ==== Import necessary user functions ====
 from user_model import get_user_by_email, add_bookmark, remove_bookmark_db, get_bookmarks_by_email, clear_bookmarks
 
@@ -7,75 +9,86 @@ from users_db import current_session  # assuming you moved current_session here 
 # ==== Import functions from Admin backend ====
 from Admin.adminBackend import get_manga_list, new_manga_list, get_new_releases_backend
 
-# ==== Static manga list (used as fallback or example data) ====
-mangas = [
-    {
-        "title": "Dragon Ball",
-        "genre": "Action, Adventure, Martial Arts, Fantasy",
-        "chapter": 519,
-        "summary": "Son Goku, a young martial artist with a monkey tail, embarks on a quest to find the seven Dragon Balls",
-        "status": "Completed",
-        "author": "Akira Toriyama",
-        "image_path": r"image/dragonball.jfif"
-    },
-    {
-        "title": "One Piece",
-        "genre": "Adventure, Fantasy, Action",
-        "chapter": 1090,
-        "summary": "Monkey D. Luffy, a rubber-powered pirate, sails the seas in search of the legendary One Piece.",
-        "status": "Ongoing",
-        "author": "Eiichiro Oda",
-        "image_path": r"image/onepiece.webp"
-    },
-    {
-        "title": "Naruto",
-        "genre": "Adventure, Martial Arts, Fantasy",
-        "chapter": 700,
-        "summary": "Naruto Uzumaki, a young ninja from the Hidden Leaf Village who dreams of becoming the Hokage.",
-        "status": "Completed",
-        "author": "Masashi Kishimoto",
-        "image_path": r"image/naruto.jfif"
-    },
-    {
-        "title": "Dandadan",
-        "genre": "Action, Supernatural, Sci-Fi, Comedy",
-        "chapter": 150,
-        "summary": "A high school girl and a nerdy boy team up to battle supernatural threats. When strange dreams turn to real.",
-        "status": "Ongoing",
-        "author": "Yukinobu Tatsu",
-        "image_path": r"image/dandadan.jfif"
-    },
-    {
-        "title": "Sakamoto Days",
-        "genre": "Action, Comedy",
-        "chapter": 150,
-        "summary": "A legendary hitman retires to run a convenience store, but teams up with a boy and girl when danger drags him back into action.",
-        "status": "Ongoing",
-        "author": "Yuto Suzuki",
-        "image_path": r"image/sakamoto.webp"
-    },
-    {
-        "title": "Jujutsu Kaisen",
-        "genre": "Action, Supernatural, Dark Fantasy",
-        "chapter": 236,
-        "summary": "Gojo faces off against Sukuna in a fierce clash to determine who's the strongest sorcerer of their era.",
-        "status": "Ongoing",
-        "author": "Gege Akutami",
-        "image_path": r"image/jujutsu.webp"
-    },
-    {
-        "title": "My Hero Academia",
-        "genre": "Action, Superhero, Fantasy",
-        "chapter": 400,
-        "summary": "In a world where most people have powers, a powerless boy dreams of becoming a hero.",
-        "status": "Ongoing",
-        "author": "Kohei Horikoshi",
-        "image_path": r"image/mha.jpg"
-    },
-]
-
 # ==== Fetch basic manga list ====
 def get_mangas():
+
+        # ==== Static manga list (used as fallback or example data) ====
+    mangas = [
+        {
+            "title": "Dragon Ball",
+            "genre": "Action, Adventure, Martial Arts, Fantasy",
+            "chapter": 519,
+            "summary": "Son Goku, a young martial artist with a monkey tail, embarks on a quest to find the seven Dragon Balls",
+            "status": "Completed",
+            "author": "Akira Toriyama",
+            "image_path": r"image/dragonball.jfif"
+        },
+        {
+            "title": "One Piece",
+            "genre": "Adventure, Fantasy, Action",
+            "chapter": 1090,
+            "summary": "Monkey D. Luffy, a rubber-powered pirate, sails the seas in search of the legendary One Piece.",
+            "status": "Ongoing",
+            "author": "Eiichiro Oda",
+            "image_path": r"image/onepiece.webp"
+        },
+        {
+            "title": "Naruto",
+            "genre": "Adventure, Martial Arts, Fantasy",
+            "chapter": 700,
+            "summary": "Naruto Uzumaki, a young ninja from the Hidden Leaf Village who dreams of becoming the Hokage.",
+            "status": "Completed",
+            "author": "Masashi Kishimoto",
+            "image_path": r"image/naruto.jfif"
+        },
+        {
+            "title": "Dandadan",
+            "genre": "Action, Supernatural, Sci-Fi, Comedy",
+            "chapter": 150,
+            "summary": "A high school girl and a nerdy boy team up to battle supernatural threats. When strange dreams turn to real.",
+            "status": "Ongoing",
+            "author": "Yukinobu Tatsu",
+            "image_path": r"image/dandadan.jfif"
+        },
+        {
+            "title": "Sakamoto Days",
+            "genre": "Action, Comedy",
+            "chapter": 150,
+            "summary": "A legendary hitman retires to run a convenience store, but teams up with a boy and girl when danger drags him back into action.",
+            "status": "Ongoing",
+            "author": "Yuto Suzuki",
+            "image_path": r"image/sakamoto.webp"
+        },
+        {
+            "title": "Jujutsu Kaisen",
+            "genre": "Action, Supernatural, Dark Fantasy",
+            "chapter": 236,
+            "summary": "Gojo faces off against Sukuna in a fierce clash to determine who's the strongest sorcerer of their era.",
+            "status": "Ongoing",
+            "author": "Gege Akutami",
+            "image_path": r"image/jujutsu.webp"
+        },
+        {
+            "title": "My Hero Academia",
+            "genre": "Action, Superhero, Fantasy",
+            "chapter": 400,
+            "summary": "In a world where most people have powers, a powerless boy dreams of becoming a hero.",
+            "status": "Ongoing",
+            "author": "Kohei Horikoshi",
+            "image_path": r"image/mha.jpg"
+        },
+    ]
+
+    conn = sqlite3.connect('user.db')
+    cursor = conn.cursor()
+
+    for manga in mangas:
+        cursor.execute("""
+                       INSERT INTO Manga (title, author, latest, status, description)
+                       VALUES (?, ?, ?, ?, ?)
+                       """, (manga["title"], manga["author"], manga["chapter"], manga["status"], manga["summary"])) # kulang pa ng img, to be fix later
+        conn.commit()
+        
     return mangas
 
 # ==== Popular manga section ====
