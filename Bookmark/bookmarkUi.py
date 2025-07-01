@@ -5,15 +5,12 @@ from user_model import get_bookmarks_by_email
 from users_db import current_session
 from user_model import remove_bookmark_db
 from Homepage.homeBackend import get_bookmarked_mangas
-import os
-
-# Import your manga list for details lookup
 from Admin.adminBackend import get_all_manga
 
 class BookmarkPage(ctk.CTkFrame):
-    def __init__(self, parent, on_bookmark_change=None): # bookmark_change parameter
+    def __init__(self, parent, on_bookmark_change=None):
         super().__init__(parent)
-        self.on_bookmark_change = on_bookmark_change # Store the callback
+        self.on_bookmark_change = on_bookmark_change
 
         # ===== Scrollable frame setup =====
         self.scrollable_frame = ctk.CTkScrollableFrame(self, height=700)
@@ -44,11 +41,10 @@ class BookmarkPage(ctk.CTkFrame):
         self.bookmark_display_frame = ctk.CTkFrame(self.scrollable_frame, fg_color="transparent")
         self.bookmark_display_frame.pack(padx=20, pady=20, anchor="center") 
 
-        self.display_bookmarks() # Call to display bookmarks initially
+        self.display_bookmarks()
 
     def display_bookmarks(self):
-        """Clears current displayed bookmarks and re-populates them."""
-        # Clear existing widgets in the display frame
+        """Clears current displayed bookmarks and re-populates them sorted A-Z."""
         for widget in self.bookmark_display_frame.winfo_children():
             widget.destroy()
 
@@ -58,9 +54,24 @@ class BookmarkPage(ctk.CTkFrame):
         else:
             bookmarked_titles = get_bookmarks_by_email(email)
 
-        # Map titles to full manga info using manga_list
+        # ==== Combine and deduplicate all manga sources ====
         all_manga = get_all_manga() + get_bookmarked_mangas()
-        bookmarked_mangas = [m for m in all_manga if (m.get("name") in bookmarked_titles) or (m.get("title") in bookmarked_titles)]
+        unique_manga_map = {}
+
+        for m in all_manga:
+            identifier = (m.get("title") or m.get("name") or "").strip()
+            if identifier and identifier not in unique_manga_map:
+                unique_manga_map[identifier] = m
+
+        # ==== Filter bookmarks only from titles that exist in the master list ====
+        bookmarked_mangas = [
+            unique_manga_map[title]
+            for title in bookmarked_titles
+            if title in unique_manga_map
+        ]
+
+        # ==== Sort A to Z by title or name ====
+        bookmarked_mangas.sort(key=lambda m: (m.get("title") or m.get("name") or "").lower())
 
         if not bookmarked_mangas:
             no_bookmark_label = ctk.CTkLabel(
@@ -74,7 +85,6 @@ class BookmarkPage(ctk.CTkFrame):
 
         # Arrange in a grid, 3 columns
         num_columns = 3
-        # Configure columns in bookmark_display_frame to expand equally, helping center content
         for i in range(num_columns):
             self.bookmark_display_frame.grid_columnconfigure(i, weight=1)
 
@@ -90,7 +100,6 @@ class BookmarkPage(ctk.CTkFrame):
         container.grid_columnconfigure(1, weight=1)
         container.grid_rowconfigure((0, 1, 2, 3), weight=1)
 
-        # Determine image path and manga title/name
         image_path = manga.get("image_path") or manga.get("image")
         manga_name = manga.get("title") or manga.get("name")
         manga_genre = manga.get("genre")
@@ -114,7 +123,6 @@ class BookmarkPage(ctk.CTkFrame):
             chapter_label = ctk.CTkLabel(container, text=f"Chapter {manga['chapter']}", font=ctk.CTkFont(size=14))
             chapter_label.grid(row=1, column=1, sticky="nw", padx=10)
         else:
-            # Add an empty label to maintain grid structure if chapter is absent
             ctk.CTkLabel(container, text="", font=ctk.CTkFont(size=14)).grid(row=1, column=1, sticky="nw", padx=10)
 
         genre_label = ctk.CTkLabel(container, text=f"Genre: {manga_genre}", font=ctk.CTkFont(size=12))
@@ -123,7 +131,6 @@ class BookmarkPage(ctk.CTkFrame):
         status_label = ctk.CTkLabel(container, text=f"Status: {manga_status}", font=ctk.CTkFont(size=12))
         status_label.grid(row=3, column=1, sticky="nw", padx=10)
 
-        # Remove Bookmark Button
         remove_bookmark_btn = ctk.CTkButton(
             container,
             text="REMOVE",

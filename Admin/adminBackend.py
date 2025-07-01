@@ -7,14 +7,15 @@ from user_model import add_bookmark, remove_bookmark_db, get_bookmarks_by_email
 # === STATIC MANGA LIST (existing content) ===
 manga_list = [
     {"name": "Oshi no Ko", "chapter": 75, "genre": "Drama, Supernatural", "status": "Ongoing", "image": "image/oshi.webp"},
-    {"name": "Solo Leveling", "chapter": 179, "genre": "Action, Fantasy", "status": "Completed", "image": "image/solo.jpg"},
+    {"name": "Green Green Greens", "chapter": 26, "genre": "Sports, Drama", "status": "Ongoing", "image": "image/greens.jfif"},
     {"name": "Wind Breaker", "chapter": 460, "genre": "Action, Sports", "status": "Ongoing", "image": "image/braker.jfif"},
     {"name": "Pokemon", "chapter": 150, "genre": "Adventure, Fantasy", "status": "Ongoing", "image": "image/pokemon.jfif"},
 ]
 
 # === DYNAMICALLY ADDED NEW MANGA LIST ===
 new_manga_list = [
-    # {"name": "Green Green Greens", "chapter": 26, "genre": "Sports, Drama", "status": "Ongoing", "image": "image/greens.jfif", "release_date": datetime.now()},
+    #sample new manga entries
+     {"name": "The Days of Diamond", "chapter": "85", "genre": "Sports, Drama","status": "Ongoing","image": "image/Ace.jpg","release_date": datetime.now()},
 ]
 
 # === Returns static manga list ===

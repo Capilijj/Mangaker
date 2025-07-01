@@ -187,6 +187,7 @@ def get_bookmarks_by_email(email):
         cursor.execute('''
             SELECT manga_title FROM bookmarks
             WHERE email = ?
+            ORDER BY LOWER(manga_title) ASC
         ''', (email,))
         rows = cursor.fetchall()
         return [row[0] for row in rows]

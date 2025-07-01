@@ -1,26 +1,24 @@
-#=========================================================
-#open mo muna yung todo.py nandun ung sasabihin ko rin pre=
-#=========================================================
-#==================== Imports ====================
+# main.py
+# ==================== Imports ====================
 import customtkinter as ctk
 from Login.loginUi import LoginPage
 from SignUp.signUpUi import SignUpPage
 from Forgot_pass.forgotUi import ForgotPasswordPage
-from Homepage.homeUi import DashboardPage 
+from Homepage.homeUi import DashboardPage
 from Profile.profileUi import ProfilePage
-from Homepage.homeBackend import get_user_prof # parameter in homebackend function //alam mo nato 
-from SearchPage.searchBackend import search_mangas 
+from Homepage.homeBackend import get_user_prof
+from SearchPage.searchBackend import search_mangas
 from Admin.adminUi import AdminPage
 from Bookmark.bookmarkUi import BookmarkPage
 from SearchPage.searchUi import SearchPage
 
 from PIL import Image, ImageDraw
 from customtkinter import CTkImage
-import os # checking file existence or managing paths.
+import os
 
-#=========================================================================================
-#                                 Function to make the image Circle                      =
-#=========================================================================================
+# =========================================================================================
+#                          Function to make the image Circle
+# =========================================================================================
 def make_circle(img):
     size = (min(img.size),) * 2
     mask = Image.new('L', size, 0)
@@ -31,13 +29,14 @@ def make_circle(img):
     output.paste(img, (0, 0), mask)
     return output
 
-#=========================================================================================
-#                                 Top Navigation Bar Header                              =
-#=========================================================================================
+# =========================================================================================
+#                           Top Navigation Bar Header
+# =========================================================================================
 class TopBar(ctk.CTkFrame):
     def __init__(self, parent, on_home, on_bookmark, on_comics, on_profile, on_search=None):
         super().__init__(parent, height=60, fg_color="#39ff14", corner_radius=15)
         self.on_profile = on_profile
+        self.on_search_callback = on_search # Store the search callback
 
         # Right-side container for search and bell Icon
         self.right_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -61,7 +60,7 @@ class TopBar(ctk.CTkFrame):
             "corner_radius": 10,
         }
 
-        #Button widget -Home, Bookmark, Comics, Profile
+        # Button widget -Home, Bookmark, Comics, Profile
         self.home_button = ctk.CTkButton(self, text="Home", command=on_home, **button_style)
         self.home_button.pack(side="left", padx=10, pady=10)
 
@@ -83,23 +82,23 @@ class TopBar(ctk.CTkFrame):
         }
         self.active_button = None
 
-
-#====================================================================================
-#                 ito yung TO Do mo ken nasa baba lang yung function logic nito 
-#====================================================================================
-
-    # === Bell Icon (clickable, circle, hoverable) ===
+        # === Bell Icon (clickable, circle, hoverable) ===
         bell_path = "image/bell.png"
         if os.path.exists(bell_path):
             bell_img = Image.open(bell_path).resize((40, 40), Image.Resampling.LANCZOS)
-            circle_bell = make_circle(bell_img) # ---- Apply circular mask to bell image ----
-            self.bell_icon = CTkImage(light_image=circle_bell, dark_image=circle_bell, size=(40, 40))
+            circle_bell = make_circle(bell_img) # Apply circular mask to bell image
+            self.bell_icon_img = CTkImage(light_image=circle_bell, dark_image=circle_bell, size=(40, 40))
         else:
-            self.bell_icon = None
+            self.bell_icon_img = None
             print("Bell image not found!")
 
-        self.bell_label = ctk.CTkLabel(self.right_container, image=self.bell_icon, text="")
+        self.bell_label = ctk.CTkLabel(self.right_container, image=self.bell_icon_img, text="")
         self.bell_label.pack(side="left", padx=(5, 10))
+
+        # --- REMOVED: Notification count label ---
+        # self.notif_count_label = ctk.CTkLabel(...)
+        # self.notif_count_label.place(...)
+        # self.update_notification_count(0) # Removed this call
 
         # Connect bell click to show dialog
         self.bell_label.bind("<Button-1>", lambda e: self.show_notification_dialog())
@@ -107,17 +106,16 @@ class TopBar(ctk.CTkFrame):
         # Hover effect (change cursor)
         self.bell_label.bind("<Enter>", lambda e: self.bell_label.configure(cursor="hand2"))
         self.bell_label.bind("<Leave>", lambda e: self.bell_label.configure(cursor="arrow"))
-#=====================================================================================================
 
-    # Search field
+        # Search field
         self.search_frame = ctk.CTkFrame(self.right_container, width=240, height=36)
         self.search_frame.pack(side="left", padx=(0, 10))
-        self.search_frame.pack_propagate(False) # ---- Prevent frame from resizing to content ----
+        self.search_frame.pack_propagate(False) # Prevent frame from resizing to content
 
         self.search_entry = ctk.CTkEntry(self.search_frame, placeholder_text="Search...")
         self.search_entry.pack(side="left", fill="both", expand=True)
 
-        #search icon image with enable to click the image icon
+        # search icon image with enable to click the image icon
         search_icon_path = r"image/glass1.gif"
         if os.path.exists(search_icon_path):
             main_icon_img = Image.open(search_icon_path).resize((25, 25), Image.Resampling.LANCZOS)
@@ -134,18 +132,18 @@ class TopBar(ctk.CTkFrame):
             fg_color="#FFFFFF",
             corner_radius=0,
             text="",
-            command=on_search if on_search else lambda: print("Search clicked")
+            command=self.trigger_search_from_topbar # Call a local method that uses the callback
         )
         self.search_icon_button.pack(side="left")
 
-#=========================================================================================
-#                                 Top Bar Methods                                       =
-#=========================================================================================
+    # =========================================================================================
+    #                            Top Bar Methods
+    # =========================================================================================
 
     def refresh_profile_icon(self):
         user_info = get_user_prof()
         image_path = user_info.get("profile_image")
-        
+
         if image_path and os.path.exists(image_path):
             try:
                 user_img = Image.open(image_path).resize((32, 32), Image.Resampling.LANCZOS)
@@ -164,29 +162,46 @@ class TopBar(ctk.CTkFrame):
 
     def set_active_button(self, key):
         # key: "home", "bookmark", etc.
-        # ---- Reset borders for all buttons ----
+        # Reset borders for all buttons
         for name, btn in self.buttons.items():
             btn.configure(border_color="black", border_width=0)
-        # ---- Set border for the active button ----
+        # Set border for the active button
         if key in self.buttons:
             self.buttons[key].configure(border_color="black", border_width=2)
             self.active_button = self.buttons[key]
 
-#========================================================================================
-#         ito yung dialog box na lilitaw pag ka click add ka dito ng count number sa taas
-#========================================================================================
+    # --- REMOVED: update_notification_count method ---
+    # def update_notification_count(self, count):
+    #     """Updates the notification count displayed on the bell icon."""
+    #     if count > 0:
+    #         self.notif_count_label.configure(text=str(count), fg_color="red")
+    #         self.notif_count_label.place(relx=0.8, rely=0.1, anchor="ne") # Show it
+    #     else:
+    #         self.notif_count_label.configure(text="")
+    #         self.notif_count_label.place_forget() # Hide it if count is 0
+
+    def trigger_search_from_topbar(self):
+        """Called when the top bar search button is clicked."""
+        query = self.search_entry.get().strip()
+        if self.on_search_callback:
+            self.on_search_callback(query=query)
+            self.search_entry.delete(0, ctk.END) # Clear the search bar after triggering search
+
+    # ====================================================================================
+    #                         Notification Dialog Logic
+    # ====================================================================================
     def show_notification_dialog(self):
-        # ---- Close existing dialog if open ----
+        # Close existing dialog if open
         if hasattr(self, "notif_dialog") and self.notif_dialog.winfo_exists():
             self.notif_dialog.destroy()
             return
 
         # Create Toplevel window for notification
         self.notif_dialog = ctk.CTkToplevel(self)
-        self.notif_dialog.overrideredirect(True)   
-        self.notif_dialog.attributes("-topmost", True) 
+        self.notif_dialog.overrideredirect(True)
+        self.notif_dialog.attributes("-topmost", True)
         self.notif_dialog.configure(fg_color="#222222")
-        self.notif_dialog.geometry("300x120")   # Width x Height
+        self.notif_dialog.geometry("300x120")  # Width x Height
 
         # Get bell position to place the dialog
         x = self.bell_label.winfo_rootx()
@@ -196,39 +211,45 @@ class TopBar(ctk.CTkFrame):
         screen_height = self.winfo_screenheight()
         height = 120
 
-        y = min(y, screen_height - height - 10) 
+        y = min(y, screen_height - height - 10)
 
         self.notif_dialog.geometry(f"300x{height}+{x}+{y}")
 
-        # Example content for the notification dialog
-        label = ctk.CTkLabel(self.notif_dialog, text="🔔 You have no new notifications.", text_color="white")
+        # --- MODIFIED: Notification text (no count) ---
+        notification_text = "🔔 You have no new notifications."
+        # Removed logic that checks current_count and adds to text
+
+        label = ctk.CTkLabel(self.notif_dialog, text=notification_text, text_color="white")
         label.pack(padx=10, pady=10)
 
         # Optional: Close when focus is lost
         self.notif_dialog.bind("<FocusOut>", lambda e: self.notif_dialog.destroy())
 
-
-#=========================================================================================
-#                                     Main App                                          =
-#=========================================================================================
+# =========================================================================================
+#                                     Main App
+# =========================================================================================
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.geometry("1200x700")
         self.title("Login")
-        self.resizable(True, False) # ---- PAG AYAW NIYO NA FUFULL SCREEN PWEDE (False , False) ----
+        self.resizable(True, False)
 
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
+
+        # --- REMOVED: Notification Count Management and Simulation ---
+        # self._notification_count = 0
+        # self.after(2000, self.simulate_notifications)
 
         # Initialize TopBar with navigation commands
         self.topbar = TopBar(
             self,
             on_home=self.show_dashboard,
             on_bookmark=self.show_bookmark,
-            on_comics=self.show_admin, 
+            on_comics=self.show_admin,
             on_profile=self.show_profile,
-            on_search=self.search_clicked 
+            on_search=self.initiate_search_display
         )
         self.topbar.grid(row=0, column=0, sticky="ew")
 
@@ -240,14 +261,10 @@ class App(ctk.CTk):
         self.login_page = LoginPage(self.container, self.show_signup, self.show_forgot_password, self.show_dashboard)
         self.signup_page = SignUpPage(self.container, self.show_login)
         self.forgot_password_page = ForgotPasswordPage(self.container, self.show_login)
-        # Pass self (the controller) to DashboardPage so it can trigger filtered searches
         self.dashboard_page = DashboardPage(self.container, controller=self)
         self.profile_page = ProfilePage(self.container, on_logout=self.show_login, topbar=self.topbar)
-
         self.bookmark_page = BookmarkPage(self.container, on_bookmark_change=self.refresh_all_bookmark_related_uis)
-
         self.admin_page = AdminPage(self.container, controller=self)
-        # Initialize SearchPage, pass controller to it
         self.search_results_page = SearchPage(self.container, controller=self)
 
         # Place all pages in the same grid position within the container
@@ -258,75 +275,93 @@ class App(ctk.CTk):
         ]:
             page.place(relx=0, rely=0, relwidth=1, relheight=1)
 
-        self.show_login() # ---- Start the application with the login page ----
+        self.show_login()
 
-    #=========================================================================================
-    #                                   Navigation Methods                                  =
-    #=========================================================================================
+    # =========================================================================================
+    #                                  REMOVED: Notification Handling methods
+    # =========================================================================================
+    # def get_notification_count(self):
+    #     return self._notification_count
+    #
+    # def set_notification_count(self, count):
+    #     self._notification_count = count
+    #     self.topbar.update_notification_count(self._notification_count)
+    #
+    # def add_notification(self, count=1):
+    #     self.set_notification_count(self._notification_count + count)
+    #
+    # def clear_notifications(self):
+    #     self.set_notification_count(0)
+    #
+    # def simulate_notifications(self):
+    #     self.add_notification(1)
+    #     print(f"Simulated new notification. Total: {self._notification_count}")
+    #     self.after(10000, self.simulate_notifications)
+
+    # =========================================================================================
+    #                                  Navigation Methods
+    # =========================================================================================
 
     def show_topbar(self):
         self.topbar.grid(row=0, column=0, sticky="ew")
-    #LOG IN METHOD
+
+    # LOG IN METHOD
     def show_login(self):
         self.title("Login")
-        self.topbar.grid_forget() # ---- Hide top bar for login/signup/forgot password pages ----
+        self.topbar.grid_forget()
         self.login_page.clear_fields()
         self.login_page.tkraise()
-    #sign Up METHOD
+        # --- REMOVED: Clear notifications here ---
+        # self.clear_notifications()
+
+    # Sign Up METHOD
     def show_signup(self):
         self.title("Sign Up")
         self.topbar.grid_forget()
         self.signup_page.clear_fields()
         self.signup_page.tkraise()
-    #Forgot pass METHOD
+
+    # Forgot pass METHOD
     def show_forgot_password(self):
         self.title("Forgot Password")
         self.topbar.grid_forget()
         self.forgot_password_page.clear_fields()
         self.forgot_password_page.tkraise()
-    #Dashboard/Home METHOD
+
+    # Dashboard/Home METHOD
     def show_dashboard(self):
         self.title("Dashboard")
         self.show_topbar()
-        self.topbar.set_active_button("home") # ---- Highlight 'Home' button in top bar ----
-        self.topbar.refresh_profile_icon() # ---- Ensure profile icon is up-to-date ----
+        self.topbar.set_active_button("home")
+        self.topbar.refresh_profile_icon()
         self.dashboard_page.tkraise()
-    #Profile METHOD
+
+    # Profile METHOD
     def show_profile(self):
         self.title("Profile")
         self.show_topbar()
-        self.topbar.set_active_button("profile") 
-        self.profile_page.refresh_profile_info() 
+        self.topbar.set_active_button("profile")
+        self.profile_page.refresh_profile_info()
         self.profile_page.tkraise()
         self.topbar.refresh_profile_icon()
-    #Bookmark METHOD
+
+    # Bookmark METHOD
     def show_bookmark(self):
         self.title("Bookmark")
         self.show_topbar()
         self.topbar.set_active_button("bookmark")
-        self.bookmark_page.display_bookmarks() 
+        self.bookmark_page.display_bookmarks()
         self.bookmark_page.tkraise()
-    #Comics METHOD
+
+    # Comics/Admin METHOD (as per your mapping)
     def show_admin(self):
-        self.title("Comics")
+        self.title("Comics (Admin)")
         self.show_topbar()
-        self.topbar.set_active_button("comics") 
-        self.admin_page.refresh_admin_bookmark_states() 
+        self.topbar.set_active_button("comics")
+        self.admin_page.refresh_admin_bookmark_states()
         self.admin_page.tkraise()
 
-    #Search_clicked METHOD
-    def search_clicked(self):
-        query = self.topbar.search_entry.get().strip() 
-
-        if not query:
-            self.show_search_results(results=[], query=query)
-            return
-
-        # Proceed with search
-        self.initiate_search_display(query=query)
-        self.topbar.search_entry.delete(0, ctk.END) # Clear the search bar
-
-    # New method to handle searches from various sources (top bar or filters)
+    # Search_clicked METHOD (called by top bar search button)
     def initiate_search_display(self, query=None, genre_filter=None, status_filter=None, order_filter=None):
         """
         Initiates a search with the given criteria and displays results on SearchPage.
@@ -334,7 +369,11 @@ class App(ctk.CTk):
         """
         self.title("Search Results")
 
-        # Call the backend search function with all parameters
+        if not query and not genre_filter and not status_filter and not order_filter:
+            print("No search criteria provided. Displaying empty/previous search results page.")
+            self.show_search_results(results=[], query="", genre_filter="", status_filter="", order_filter="")
+            return
+
         results = search_mangas(
             query=query,
             genre_filter=genre_filter,
@@ -345,35 +384,39 @@ class App(ctk.CTk):
         print(f"DEBUG: initiate_search_display - Query: '{query}', Genre: '{genre_filter}', Status: '{status_filter}', Order: '{order_filter}'")
         print(f"DEBUG: Search Results from search_mangas: {len(results)} found")
 
-        # Display results on the SearchPage
         self.show_search_results(results, query, genre_filter, status_filter, order_filter)
 
-
     def show_search_results(self, results, query=None, genre_filter=None, status_filter=None, order_filter=None):
-        """
-        Shows the SearchPage and passes the search results and criteria to it.
-        """
         self.show_topbar()
-        self.topbar.set_active_button(None) # No active button for search results page
-        # ---- Pass all relevant search criteria to display_results for conditional display ----
-        self.search_results_page.display_results(results, query, genre_filter, status_filter, order_filter)
+        self.topbar.set_active_button(None)
+        self.search_results_page.display_results(
+            results,
+            query=query,
+            genre_filter=genre_filter,
+            status_filter=status_filter,
+            order_filter=order_filter
+        )
         self.search_results_page.tkraise()
-
-
-    # New method to refresh bookmark icons across all relevant UIs
+        self.search_results_page.refresh_bookmark_states()
+        
     def refresh_all_bookmark_related_uis(self):
-        self.dashboard_page.refresh_all_bookmark_states() # Refreshes dashboard icons
-        self.admin_page.refresh_admin_bookmark_states() # Refreshes admin page icons
-        self.bookmark_page.display_bookmarks() # Refresh bookmarks in the bookmark page
-        self.search_results_page.refresh_bookmark_states() # Refresh search results page icons
+        print("Refreshing all bookmark-related UIs...")
+        if hasattr(self.dashboard_page, 'refresh_all_bookmark_states'):
+            self.dashboard_page.refresh_all_bookmark_states()
+        if hasattr(self.admin_page, 'refresh_admin_bookmark_states'):
+            self.admin_page.refresh_admin_bookmark_states()
+        if hasattr(self.bookmark_page, 'display_bookmarks'):
+            self.bookmark_page.display_bookmarks()
+        if hasattr(self.search_results_page, 'refresh_bookmark_states'):
+            self.search_results_page.refresh_bookmark_states()
 
-#=========================================================================================
-#                                       Run Application                                 =
-#=========================================================================================
+# =========================================================================================
+#                                     Run Application
+# =========================================================================================
 
 if __name__ == "__main__":
-    from user_model import init_user_db  # ⬅️ ADD THIS
-    init_user_db()                        # ⬅️ AND THIS LINE
+    from user_model import init_user_db
+    init_user_db()
 
     app = App()
     app.mainloop()
