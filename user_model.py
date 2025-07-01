@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime, timedelta
+import hashlib #forgot password logic
 DB_NAME = "user.db"
 
 def get_connection():
@@ -117,6 +118,20 @@ def update_user_profile(email, updates):
         conn.commit()
         return True, "Profile updated successfully!"
 
+def update_user_password(email, new_password):
+    try:
+        # Hash the password for security
+        hashed = hashlib.sha256(new_password.encode()).hexdigest()
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE users SET password = ? WHERE email = ?", (hashed, email))
+            if cursor.rowcount == 0:
+                return False, "Email not found."
+            conn.commit()
+            return True, "Password updated successfully!"
+    except Exception as e:
+        return False, f"Database error: {e}"
+    
 # --- BOOKMARK OPERATIONS ---
 
 def get_next_available_bookmark_id():

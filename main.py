@@ -143,21 +143,24 @@ class TopBar(ctk.CTkFrame):
 #=========================================================================================
 
     def refresh_profile_icon(self):
-        user_info = get_user_prof() # ---- Get user profile information from backend ----
+        user_info = get_user_prof()
         image_path = user_info.get("profile_image")
-
+        
         if image_path and os.path.exists(image_path):
             try:
                 user_img = Image.open(image_path).resize((32, 32), Image.Resampling.LANCZOS)
-                user_img = make_circle(user_img) # ---- Make the profile image circular ----
+                user_img = make_circle(user_img)
                 self.user_icon = CTkImage(light_image=user_img, dark_image=user_img, size=(32, 32))
                 self.user_icon_label.configure(image=self.user_icon, text="")
-                self.user_icon_label.image = self.user_icon # ---- Keep a reference to prevent garbage collection ----
+                self.user_icon_label.image = self.user_icon
             except Exception as e:
-                print("Failed to load profile icon:", e)
-                self.user_icon_label.configure(image=None, text="") # Fallback if image fails
+                print(f"❌ Failed to load profile image '{image_path}': {e}")
+                self.user_icon_label.configure(image=None, text="")  # No image fallback
+                self.user_icon_label.image = None
         else:
-            self.user_icon_label.configure(image=None, text="")   # fallback emoji
+            # No image found or file missing – clear the image
+            self.user_icon_label.configure(image=None, text="")
+            self.user_icon_label.image = None
 
     def set_active_button(self, key):
         # key: "home", "bookmark", etc.

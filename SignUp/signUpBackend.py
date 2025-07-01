@@ -18,8 +18,8 @@ def validate_user_data(email, username, password, confirm_password, image_path=N
         return False, "Please fill in all fields."
     if not image_path:
         return False, "Please upload a profile photo."
-    if not (6 <= len(password) <= 8):
-        return False, "Password must be 6 char/num."
+    if not (6 <= len(password) <= 15):
+        return False, "Password must be 15 char/num."
     if not email.endswith("@gmail.com"):
         return False, "Please use a Valid Gmail address."
     if password != confirm_password:
@@ -45,7 +45,12 @@ def send_otp_email(email, otp):
             raise ValueError("Missing email credentials in .env")
 
         subject = "Your OTP Verification Code"
-        body = f"Your OTP is: {otp}\n\nThis OTP is valid for 5 minutes."
+        body = (
+            "Welcome to James Mangaker!\n\n"
+            "Thank you for signing up.\n\n"
+            f"Your OTP is: {otp}\n\n"
+            "This OTP is valid for 5 minutes."
+        )
         msg = f"Subject: {subject}\n\n{body}"
 
         server = smtplib.SMTP("smtp.gmail.com", 587)
