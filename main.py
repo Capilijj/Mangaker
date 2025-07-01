@@ -625,7 +625,7 @@ if __name__ == "__main__":
 
     for m in mangas:
         cursor.execute("""
-            INSERT INTO Manga (title, author, status, image_path, description)
+            INSERT INTO Manga (title, author, status, img_path, description)
             VALUES (?, ?, ?, ?, ?, ?) 
         """, (
         m["name"],
