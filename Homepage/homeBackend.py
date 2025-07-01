@@ -12,6 +12,7 @@ mangas = [
     {
         "title": "Dragon Ball",
         "genre": "Action, Adventure, Martial Arts, Fantasy",
+        "chapter": 519,
         "summary": "Son Goku, a young martial artist with a monkey tail, embarks on a quest to find the seven Dragon Balls",
         "status": "Completed",
         "author": "Akira Toriyama",
@@ -20,6 +21,7 @@ mangas = [
     {
         "title": "One Piece",
         "genre": "Adventure, Fantasy, Action",
+        "chapter": 1090,
         "summary": "Monkey D. Luffy, a rubber-powered pirate, sails the seas in search of the legendary One Piece.",
         "status": "Ongoing",
         "author": "Eiichiro Oda",
@@ -28,6 +30,7 @@ mangas = [
     {
         "title": "Naruto",
         "genre": "Adventure, Martial Arts, Fantasy",
+        "chapter": 700,
         "summary": "Naruto Uzumaki, a young ninja from the Hidden Leaf Village who dreams of becoming the Hokage.",
         "status": "Completed",
         "author": "Masashi Kishimoto",
@@ -36,6 +39,7 @@ mangas = [
     {
         "title": "Dandadan",
         "genre": "Action, Supernatural, Sci-Fi, Comedy",
+        "chapter": 150,
         "summary": "A high school girl and a nerdy boy team up to battle supernatural threats. When strange dreams turn to real.",
         "status": "Ongoing",
         "author": "Yukinobu Tatsu",
@@ -44,6 +48,7 @@ mangas = [
     {
         "title": "Sakamoto Days",
         "genre": "Action, Comedy",
+        "chapter": 150,
         "summary": "A legendary hitman retires to run a convenience store, but teams up with a boy and girl when danger drags him back into action.",
         "status": "Ongoing",
         "author": "Yuto Suzuki",
@@ -52,6 +57,7 @@ mangas = [
     {
         "title": "Jujutsu Kaisen",
         "genre": "Action, Supernatural, Dark Fantasy",
+        "chapter": 236,
         "summary": "Gojo faces off against Sukuna in a fierce clash to determine who's the strongest sorcerer of their era.",
         "status": "Ongoing",
         "author": "Gege Akutami",
@@ -60,6 +66,7 @@ mangas = [
     {
         "title": "My Hero Academia",
         "genre": "Action, Superhero, Fantasy",
+        "chapter": 400,
         "summary": "In a world where most people have powers, a powerless boy dreams of becoming a hero.",
         "status": "Ongoing",
         "author": "Kohei Horikoshi",
@@ -74,27 +81,147 @@ def get_mangas():
 # ==== Popular manga section ====
 def get_popular_manga():
     return [
-        {"name": "Fullmetal Alchemist", "chapter": 116, "genre": "Action, Adventure, Fantasy", "status": "Completed", "image": "image/fullmetal.jpg"},
-        {"name": "Demon Slayer", "chapter": 205, "genre": "Action, Supernatural", "status": "Completed", "image": "image/demonslayer.jpg"},    
-        {"name": "Bleach", "chapter": 686, "genre": "Action, Supernatural", "status": "Completed", "image": "image/bleach.jpg"},
-        {"name": "Attack on Titan", "chapter": 139, "genre": "Action, Drama, Fantasy", "status": "Completed", "image": "image/AOT.jfif"},
-        {"name": "Solo Leveling", "chapter": 179, "genre": "Action, Fantasy, Adventure", "status": "Completed", "image": "image/solo.jpg"},
-        {"name": "Mashle", "chapter": 162, "genre": "Action, Comedy, Fantasy", "status": "Completed", "image": "image/magic.jpg"},
+        {
+            "name": "Fullmetal Alchemist",
+            "author": "Hiromu Arakawa",
+            "chapter": 116,
+            "genre": "Action, Adventure, Fantasy",
+            "status": "Completed",
+            "image": "image/fullmetal.jpg",
+            "desc": "Two brothers seek the Philosopher's Stone after a failed alchemy experiment."
+        },
+        {
+            "name": "Demon Slayer",
+            "author": "Koyoharu Gotouge",
+            "chapter": 205,
+            "genre": "Action, Supernatural",
+            "status": "Completed",
+            "image": "image/demonslayer.jpg",
+            "desc": "A boy joins the Demon Slayer Corps to avenge his family."
+        },
+        {
+            "name": "Bleach",
+            "author": "Tite Kubo",
+            "chapter": 686,
+            "genre": "Action, Supernatural",
+            "status": "Completed",
+            "image": "image/bleach.jpg",
+            "desc": "A teenager becomes a Soul Reaper to battle evil spirits."
+        },
+        {
+            "name": "Attack on Titan",
+            "author": "Hajime Isayama",
+            "chapter": 139,
+            "genre": "Action, Drama, Fantasy",
+            "status": "Completed",
+            "image": "image/AOT.jfif",
+            "desc": "Humans fight for survival against giant man-eating Titans."
+        },
+        {
+            "name": "Solo Leveling",
+            "author": "Chugong",
+            "chapter": 179,
+            "genre": "Action, Fantasy, Adventure",
+            "status": "Completed",
+            "image": "image/solo.jpg",
+            "desc": "A weak hunter rises to the top with mysterious powers."
+        },
+        {
+            "name": "Mashle",
+            "author": "Hajime Komoto",
+            "chapter": 162,
+            "genre": "Action, Comedy, Fantasy",
+            "status": "Completed",
+            "image": "image/magic.jpg",
+            "desc": "A magicless boy muscles through a magical world."
+        },
     ]
-
-# ==== Latest manga updates ====
+#latest manga updates
 def get_latest_update():
     return [
-        {"name": "Kaiju No. 8", "chapter": 110, "genre": "Action, Sci-Fi", "status": "Ongoing", "image": "image/kaiju.jfif"},
-        {"name": "Berserk", "chapter": 374, "genre": "Action, Dark Fantasy", "status": "Ongoing", "image": "image/berserk.jpg"},
-        {"name": "Spy x Family", "chapter": 94, "genre": "Action, Comedy, Slice of Life", "status": "Ongoing", "image": "image/spyxfamily.webp"},
-        {"name": "Blue Lock", "chapter": 268, "genre": "Sports, Drama", "status": "Ongoing", "image": "image/blue.jpg"},
-        {"name": "Frieren: Beyond Journey’s End", "chapter": 133, "genre": "Fantasy, Drama, Adventure, Slice of Life", "status": "Ongoing", "image": "image/Frieren.jpg"},
-        {"name": "Chainsaw Man", "chapter": 162, "genre": "Action, Supernatural, Horror", "status": "Ongoing", "image": "image/chainsawman.webp"},
-        {"name": "Black Clover", "chapter": 370, "genre": "Action, Fantasy", "status": "Ongoing", "image": "image/blackclover.jpg"},
-        {"name": "Four Knights of the Apocalypse", "chapter": 154, "genre": "Action, Adventure, Fantasy", "status": "Ongoing", "image": "image/FourKnights.webp"},
-        {"name": "Hunter x Hunter", "chapter": 400, "genre": "Action, Adventure, Fantasy", "status": "Hiatus", "image": "image/hunterhunter.jfif"},
+        {
+            "name": "Kaiju No. 8",
+            "author": "Naoya Matsumoto",
+            "chapter": 110,
+            "genre": "Action, Sci-Fi",
+            "status": "Ongoing",
+            "image": "image/kaiju.jfif",
+            "desc": "A cleaner turns Kaiju to fight monsters threatening Japan."
+        },
+        {
+            "name": "Berserk",
+            "author": "Kentaro Miura",
+            "chapter": 374,
+            "genre": "Action, Dark Fantasy",
+            "status": "Ongoing",
+            "image": "image/berserk.jpg",
+            "desc": "A lone swordsman battles demons in a dark, brutal world."
+        },
+        {
+            "name": "Spy x Family",
+            "author": "Tatsuya Endo",
+            "chapter": 94,
+            "genre": "Action, Comedy, Slice of Life",
+            "status": "Ongoing",
+            "image": "image/spyxfamily.webp",
+            "desc": "A spy forms a fake family for his secret mission."
+        },
+        {
+            "name": "Blue Lock",
+            "author": "Muneyuki Kaneshiro",
+            "chapter": 268,
+            "genre": "Sports, Drama",
+            "status": "Ongoing",
+            "image": "image/blue.jpg",
+            "desc": "Strikers compete in an intense soccer survival program."
+        },
+        {
+            "name": "Frieren: Beyond Journey’s End",
+            "author": "Kanehito Yamada",
+            "chapter": 133,
+            "genre": "Fantasy, Drama, Adventure, Slice of Life",
+            "status": "Ongoing",
+            "image": "image/Frieren.jpg",
+            "desc": "An elf mage reflects on life after her hero’s journey."
+        },
+        {
+            "name": "Chainsaw Man",
+            "author": "Tatsuki Fujimoto",
+            "chapter": 162,
+            "genre": "Action, Supernatural, Horror",
+            "status": "Ongoing",
+            "image": "image/chainsawman.webp",
+            "desc": "A devil hunter gains powers by fusing with his pet devil."
+        },
+        {
+            "name": "Black Clover",
+            "author": "Yūki Tabata",
+            "chapter": 370,
+            "genre": "Action, Fantasy",
+            "status": "Ongoing",
+            "image": "image/blackclover.jpg",
+            "desc": "A magicless boy dreams of becoming the Wizard King."
+        },
+        {
+            "name": "Four Knights of the Apocalypse",
+            "author": "Nakaba Suzuki",
+            "chapter": 154,
+            "genre": "Action, Adventure, Fantasy",
+            "status": "Ongoing",
+            "image": "image/FourKnights.webp",
+            "desc": "A sequel to Seven Deadly Sins with new legendary knights."
+        },
+        {
+            "name": "Hunter x Hunter",
+            "author": "Yoshihiro Togashi",
+            "chapter": 400,
+            "genre": "Action, Adventure, Fantasy",
+            "status": "Hiatus",
+            "image": "image/hunterhunter.jfif",
+            "desc": "A boy embarks on a journey to find his hunter father."
+        },
     ]
+
 
 # ==== Get logged-in user profile ====
 def get_user_prof():

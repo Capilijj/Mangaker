@@ -7,9 +7,9 @@ from customtkinter import CTkImage
 from Homepage.homeBackend import (
     get_mangas, get_popular_manga, get_latest_update,
     get_genres, get_status_options, get_order_options,
-    bookmark_manga, remove_bookmark, get_bookmarked_mangas 
+    bookmark_manga, remove_bookmark, get_bookmarked_mangas
 )
-from SearchPage.searchBackend import search_mangas 
+from SearchPage.searchBackend import search_mangas
 import os
 
 def make_circle(img):
@@ -48,22 +48,30 @@ class MangaViewer(ctk.CTkFrame):
         self.text_container.grid(row=0, column=1, sticky="nsew", padx=(10, 20), pady=20)
         self.container.grid_columnconfigure(1, weight=1)
 
-        self.title_label = ctk.CTkLabel(self.text_container, text="", font=ctk.CTkFont(size=30, weight="bold"), anchor="w")
-        self.title_label.pack(anchor="nw", pady=(20, 10), padx=15)
+        # Configure column for text_container to ensure content can expand
+        self.text_container.grid_columnconfigure(0, weight=1)
 
-        self.genre_label = ctk.CTkLabel(self.text_container, text="", font=ctk.CTkFont(size=20), anchor="w")
-        self.genre_label.pack(anchor="nw", pady=(0,10), padx=15)
+        self.title_label = ctk.CTkLabel(self.text_container, text="", font=ctk.CTkFont(size=30, weight="bold"), anchor="w")
+        self.title_label.grid(row=0, column=0, sticky="nw", pady=(20, 10), padx=15)
+
+        # Only show chapter and summary if they exist in the manga dictionary
+        self.chapter_label = ctk.CTkLabel(self.text_container, text="", font=ctk.CTkFont(size=20), anchor="w")
+        self.chapter_label.grid(row=1, column=0, sticky="nw", pady=(0,10), padx=15)
+        self.chapter_label.grid_forget() # Initially hidden
 
         self.summary_label = ctk.CTkLabel(self.text_container, text="", font=ctk.CTkFont(size=20), wraplength=450, justify="left", anchor="w")
-        self.summary_label.pack(anchor="nw", pady=(0,15), padx=15)
-
-        self.status_label = ctk.CTkLabel(self.text_container, text="", font=ctk.CTkFont(size=20), anchor="w")
-        self.status_label.pack(anchor="nw", pady=(0,10), padx=15)
+        self.summary_label.grid(row=2, column=0, sticky="nw", pady=(0,15), padx=15)
+        self.summary_label.grid_forget() # Initially hidden
 
         self.author_label = ctk.CTkLabel(self.text_container, text="", font=ctk.CTkFont(size=20), anchor="w")
-        self.author_label.pack(anchor="nw", pady=(0,10), padx=15)
+        self.author_label.grid(row=3, column=0, sticky="nw", pady=(0,10), padx=15)
 
-        # self.is_bookmarked = False # This will be set dynamically 
+        self.genre_label = ctk.CTkLabel(self.text_container, text="", font=ctk.CTkFont(size=20), anchor="w")
+        self.genre_label.grid(row=4, column=0, sticky="nw", pady=(0,10), padx=15)
+
+        self.status_label = ctk.CTkLabel(self.text_container, text="", font=ctk.CTkFont(size=20), anchor="w")
+        self.status_label.grid(row=5, column=0, sticky="nw", pady=(0,10), padx=15)
+
         self.bookmark_empty = CTkImage(light_image=Image.open("image/bookempty.png"), size=(30, 30))
         self.bookmark_filled = CTkImage(light_image=Image.open("image/bookfilled.png"), size=(30, 30))
         self.manga_font = ctk.CTkFont(family="Poppins", size=16, weight="bold")
@@ -81,7 +89,7 @@ class MangaViewer(ctk.CTkFrame):
             corner_radius=8,
             command=self.toggle_bookmark
         )
-        self.bm_button.pack(anchor="nw", padx=15, pady=(0, 20))
+        self.bm_button.grid(row=6, column=0, sticky="nw", padx=15, pady=(0, 20)) # Placed in grid
 
         self.circles_frame = ctk.CTkFrame(self.container, fg_color="transparent")
         self.circles_frame.grid(row=1, column=0, columnspan=2, pady=(0,20))
@@ -103,7 +111,7 @@ class MangaViewer(ctk.CTkFrame):
 
         self.container.bind("<Configure>", self.on_container_resize)
         self.load_manga(self.current_index)
-        self.auto_switch()
+        self.auto_switch() # This line now calls the defined method
 
     def load_manga(self, index):
         manga = self.mangas[index]
@@ -132,14 +140,28 @@ class MangaViewer(ctk.CTkFrame):
             self.bg_label.configure(image=None)
 
         self.title_label.configure(text=manga.get("title", "N/A"))
-        self.genre_label.configure(text=f"Genre: {manga.get('genre', 'N/A')}") 
-        self.summary_label.configure(text=f"Summary: {manga.get('summary', 'N/A')}") 
+
+        # Only show chapter and summary if they exist in the manga dictionary
+        if "chapter" in manga and manga["chapter"] is not None:
+            self.chapter_label.configure(text=f"Chapter: {manga['chapter']}")
+            self.chapter_label.grid(row=1, column=0, sticky="nw", pady=(0,10), padx=15) # Use grid
+        else:
+            self.chapter_label.grid_forget() # Use grid_forget
+
+        if "summary" in manga and manga["summary"] is not None:
+            # Changed "Summary" to "Description"
+            self.summary_label.configure(text=f"Description: {manga['summary']}")
+            self.summary_label.grid(row=2, column=0, sticky="nw", pady=(0,15), padx=15) # Use grid
+        else:
+            self.summary_label.grid_forget() # Use grid_forget
+
+        self.author_label.configure(text=f"Author: {manga.get('author', 'N/A')}")
+        self.genre_label.configure(text=f"Genre: {manga.get('genre', 'N/A')}")
         self.status_label.configure(text=f"Status: {manga.get('status', 'Unknown')}")
-        self.author_label.configure(text=f"Author: {manga.get('author', 'N/A')}") 
 
         # Update bookmark button based on current manga's bookmark status
         bookmarked_mangas = get_bookmarked_mangas()
-        self.is_bookmarked = any(bm.get("title") == manga.get("title") for bm in bookmarked_mangas) # Use .get() for consistency
+        self.is_bookmarked = any(bm.get("title") == manga.get("title") for bm in bookmarked_mangas)
         self.bm_button.configure(image=self.bookmark_filled if self.is_bookmarked else self.bookmark_empty)
 
 
@@ -157,25 +179,26 @@ class MangaViewer(ctk.CTkFrame):
         self.current_index = (self.current_index + 1) % len(self.mangas)
         self.load_manga(self.current_index)
 
-    def auto_switch(self):
-        self.next_manga()
-        self.after(self.auto_switch_delay, self.auto_switch)
-
     def read_manga(self):
-        print(f"Opening manga: {self.mangas[self.current_index].get('title', 'N/A')}") # Use .get()
+        print(f"Opening manga: {self.mangas[self.current_index].get('title', 'N/A')}")
 
     def toggle_bookmark(self):
         current_manga = self.mangas[self.current_index]
         if self.is_bookmarked:
             remove_bookmark(current_manga)
             self.is_bookmarked = False
-            print(f"❌ Un-bookmarked: {current_manga.get('title', 'N/A')}") # Use .get()
+            print(f"❌ Un-bookmarked: {current_manga.get('title', 'N/A')}")
         else:
             bookmark_manga(current_manga)
             self.is_bookmarked = True
-            print(f"✅ Bookmarked: {current_manga.get('title', 'N/A')}") # Use .get()
+            print(f"✅ Bookmarked: {current_manga.get('title', 'N/A')}")
         new_icon = self.bookmark_filled if self.is_bookmarked else self.bookmark_empty
         self.bm_button.configure(image=new_icon)
+
+    # Add this new method to the MangaViewer class
+    def auto_switch(self):
+        self.next_manga()
+        self.after(self.auto_switch_delay, self.auto_switch)
 
 #=========================================================================================
 #           MangaListSection class to display popular and latest manga                  =
@@ -196,61 +219,82 @@ class MangaListSection(ctk.CTkFrame):
 
         self.refresh_bookmark_buttons() # Initial call to create sections and set buttons
     #=========================================
-    #            Popular manga
+    #           Popular manga
     #========================================
     def create_popular_section(self):
         label = ctk.CTkLabel(self.main_container, text="POPULAR TODAY", font=ctk.CTkFont(size=20, weight="bold"))
         label.grid(row=0, column=0, pady=(0, 15), sticky="w")
 
-        popular_frame = ctk.CTkFrame(self.main_container)
+        # Replaced CTkScrollableFrame with a regular CTkFrame for popular manga
+        popular_frame = ctk.CTkFrame(self.main_container, fg_color="transparent")
         popular_frame.grid(row=1, column=0, pady=(10, 30), sticky="ew")
 
-        for col in range(4):
-            popular_frame.grid_columnconfigure(col, weight=0)
+        # Configure columns in popular_frame to expand equally
+        # This will ensure items spread out evenly
+        for i in range(len(self.popular_manga)):
+            popular_frame.grid_columnconfigure(i, weight=1)
+
+        # Fixed size for each manga container in popular section
+        ITEM_WIDTH = 200 # Increased width for more space
+        ITEM_HEIGHT = 400 # Adjusted height to accommodate all fields and button
 
         for idx, manga in enumerate(self.popular_manga):
-            container = ctk.CTkFrame(popular_frame, corner_radius=8, fg_color="#222222")
-            container.grid(row=0, column=idx, padx=20, sticky="n")
+            container = ctk.CTkFrame(popular_frame, corner_radius=8, fg_color="#222222", width=ITEM_WIDTH, height=ITEM_HEIGHT)
+            container.grid(row=0, column=idx, padx=10, sticky="ns") # Use sticky="ns" to ensure vertical filling
+            container.pack_propagate(False) # Prevent frame from shrinking to fit content
+
+            # Configure column for content within each manga container
+            container.grid_columnconfigure(0, weight=1)
+            # Configure row 6 to expand and push row 7 (bookmark button) to the bottom
+            container.grid_rowconfigure(6, weight=1)
 
             try:
-                img = Image.open(manga.get("image", "")).resize((120, 180)) # Use .get() for image path
+                # Reverted: Use "image" as the key for popular manga images
+                img = Image.open(manga.get("image", "")).resize((120, 180)) # Maintain image size
                 photo = CTkImage(light_image=img, size=(120, 180))
             except Exception:
                 photo = None
 
             img_label = ctk.CTkLabel(container, image=photo, text="")
             img_label.image = photo
-            img_label.pack(pady=(10, 5))
+            img_label.grid(row=0, column=0, pady=(10, 5))
 
-            name_label = ctk.CTkLabel(container, text=manga.get("name", "N/A"), font=ctk.CTkFont(size=16, weight="bold"))
-            name_label.pack(pady=(0, 2))
+            # Rearranged and added description and author
+            name_label = ctk.CTkLabel(container, text=manga.get("name", "N/A"), font=ctk.CTkFont(size=16, weight="bold"), wraplength=ITEM_WIDTH-20, justify="center")
+            name_label.grid(row=1, column=0, pady=(0, 2))
 
             chapter_label = ctk.CTkLabel(container, text=f"Chapter {manga.get('chapter', 'N/A')}", font=ctk.CTkFont(size=14))
-            chapter_label.pack()
+            chapter_label.grid(row=2, column=0)
 
-            genre_label = ctk.CTkLabel(container, text=f"Genre: {manga.get('genre', 'N/A')}", font=ctk.CTkFont(size=12))
-            genre_label.pack(pady=(2, 0))
+            desc_label = ctk.CTkLabel(container, text=f"Desc: {manga.get('desc', 'N/A')}", font=ctk.CTkFont(size=12), wraplength=ITEM_WIDTH-20, justify="left")
+            desc_label.grid(row=3, column=0, pady=(2, 0))
 
-            status_label = ctk.CTkLabel(container, text=f"Status: {manga.get('status', 'Unknown')}", font=ctk.CTkFont(size=12)) # Use .get()
-            status_label.pack(pady=(0, 5))
+            author_label = ctk.CTkLabel(container, text=f"Author: {manga.get('author', 'N/A')}", font=ctk.CTkFont(size=12))
+            author_label.grid(row=4, column=0, pady=(2, 0))
+
+            genre_label = ctk.CTkLabel(container, text=f"Genre: {manga.get('genre', 'N/A')}", font=ctk.CTkFont(size=12), wraplength=ITEM_WIDTH-20, justify="center")
+            genre_label.grid(row=5, column=0, pady=(2, 0))
+
+            status_label = ctk.CTkLabel(container, text=f"Status: {manga.get('status', 'Unknown')}", font=ctk.CTkFont(size=12))
+            status_label.grid(row=6, column=0, pady=(0, 5))
 
             bookmark_empty = CTkImage(light_image=Image.open("image/bookempty.png"), size=(24, 24))
             bookmark_filled = CTkImage(light_image=Image.open("image/bookfilled.png"), size=(24, 24))
 
             # Check initial bookmark status for each manga
             bookmarked_mangas = get_bookmarked_mangas()
-            is_bookmarked = any(bm.get("name") == manga.get("name") for bm in bookmarked_mangas) # Use .get()
+            is_bookmarked = any(bm.get("name") == manga.get("name") for bm in bookmarked_mangas)
 
             bm_btn = ctk.CTkButton(container, text="BOOKMARK", width=120,
-                                 image=bookmark_filled if is_bookmarked else bookmark_empty, # Set initial image
-                                 text_color="black", font=ctk.CTkFont(size=14, weight="bold"),
-                                 fg_color="#0dfa21", hover_color="#167e03")
+                                   image=bookmark_filled if is_bookmarked else bookmark_empty, # Set initial image
+                                   text_color="black", font=ctk.CTkFont(size=14, weight="bold"),
+                                   fg_color="#0dfa21", hover_color="#167e03")
             bm_btn.configure(command=lambda btn=bm_btn, m=manga: self.toggle_bookmark_list_item(btn, m))
-            bm_btn.pack(pady=(5, 10))
+            bm_btn.grid(row=7, column=0, pady=(5, 10)) # Placed in grid
 
     def toggle_bookmark_list_item(self, btn, manga):
         bookmarked_mangas = get_bookmarked_mangas()
-        is_bookmarked = any(bm.get("name") == manga.get("name") for bm in bookmarked_mangas) # Use .get()
+        is_bookmarked = any(bm.get("name") == manga.get("name") for bm in bookmarked_mangas)
 
         bookmark_empty = CTkImage(light_image=Image.open("image/bookempty.png"), size=(24, 24))
         bookmark_filled = CTkImage(light_image=Image.open("image/bookfilled.png"), size=(24, 24))
@@ -258,14 +302,14 @@ class MangaListSection(ctk.CTkFrame):
         if is_bookmarked:
             remove_bookmark(manga)
             btn.configure(image=bookmark_empty)
-            print(f"❌ Un-bookmarked: {manga.get('name', 'N/A')}") # Use .get()
+            print(f"❌ Un-bookmarked: {manga.get('name', 'N/A')}")
         else:
             bookmark_manga(manga)
             btn.configure(image=bookmark_filled)
-            print(f"✅ Bookmarked: {manga.get('name', 'N/A')}") # Use .get()
+            print(f"✅ Bookmarked: {manga.get('name', 'N/A')}")
 
     #=========================================
-    #            Latest update manga
+    #           Latest update manga
     #=========================================
     def create_latest_update_section(self):
         self.main_container.grid_columnconfigure(0, weight=1)
@@ -291,6 +335,10 @@ class MangaListSection(ctk.CTkFrame):
         latest_frame = ctk.CTkFrame(self.main_container)
         latest_frame.grid(row=3, column=0, sticky="ew")
 
+        # Configure columns to expand equally
+        for i in range(3):
+            latest_frame.grid_columnconfigure(i, weight=1)
+
         for idx, manga in enumerate(self.latest_update):
             r = idx // 3
             c = idx % 3
@@ -298,41 +346,52 @@ class MangaListSection(ctk.CTkFrame):
 
 
     def create_latest_manga_container(self, parent, manga, row, column):
-        container = ctk.CTkFrame(parent, width=360, height=180, corner_radius=8, fg_color="#222222")
+        container = ctk.CTkFrame(parent, height=200, corner_radius=8, fg_color="#222222") # Adjusted height
         container.grid(row=row, column=column, padx=10, pady=10, sticky="nsew")
 
         container.grid_columnconfigure(1, weight=1)
-        container.grid_rowconfigure((0, 1, 2), weight=1)
-        parent.grid_columnconfigure(column, weight=1)
+        # Increased row count to accommodate all fields and button
+        container.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=0)
+        # Add weight to the status row to push the bookmark button down
+        container.grid_rowconfigure(5, weight=1)
+
 
         try:
-            img = Image.open(manga.get("image", "")).resize((120, 130)) # Use .get()
-            photo = CTkImage(light_image=img, size=(120, 130))
+            # Reverted: Use "image" as the key for latest updates manga images
+            img = Image.open(manga.get("image", "")).resize((100, 150)) # Slightly smaller image for latest updates
+            photo = CTkImage(light_image=img, size=(100, 150))
         except Exception:
             photo = None
 
         img_label = ctk.CTkLabel(container, image=photo, text="")
         img_label.image = photo
-        img_label.grid(row=0, column=0, rowspan=4, padx=10, pady=10, sticky="ns")
+        img_label.grid(row=0, column=0, rowspan=7, padx=10, pady=10, sticky="ns") # Increased rowspan
 
-        name_label = ctk.CTkLabel(container, text=manga.get("name", "N/A"), font=ctk.CTkFont(size=16, weight="bold"))
-        name_label.grid(row=0, column=1, sticky="sw", pady=(10, 0), padx=10)
+        # Rearranged and added description and author
+        name_label = ctk.CTkLabel(container, text=manga.get("name", "N/A"), font=ctk.CTkFont(size=16, weight="bold"), anchor="w")
+        name_label.grid(row=0, column=1, sticky="sw", pady=(10, 0), padx=5)
 
-        chapter_label = ctk.CTkLabel(container, text=f"Chapter {manga.get('chapter', 'N/A')}", font=ctk.CTkFont(size=14))
-        chapter_label.grid(row=1, column=1, sticky="nw", padx=10)
+        chapter_label = ctk.CTkLabel(container, text=f"Chapter {manga.get('chapter', 'N/A')}", font=ctk.CTkFont(size=14), anchor="w")
+        chapter_label.grid(row=1, column=1, sticky="nw", padx=5)
 
-        genre_label = ctk.CTkLabel(container, text=f"Genre: {manga.get('genre', 'N/A')}", font=ctk.CTkFont(size=12))
-        genre_label.grid(row=2, column=1, sticky="nw", padx=10)
+        desc_label = ctk.CTkLabel(container, text=f"Desc: {manga.get('desc', 'N/A')}", font=ctk.CTkFont(size=12), wraplength=200, justify="left", anchor="w") # Adjust wraplength
+        desc_label.grid(row=2, column=1, sticky="nw", padx=5)
 
-        status_label = ctk.CTkLabel(container, text=f"Status: {manga.get('status', 'Unknown')}", font=ctk.CTkFont(size=12)) # Use .get()
-        status_label.grid(row=3, column=1, sticky="nw", padx=10)
+        author_label = ctk.CTkLabel(container, text=f"Author: {manga.get('author', 'N/A')}", font=ctk.CTkFont(size=12), anchor="w")
+        author_label.grid(row=3, column=1, sticky="nw", padx=5)
+
+        genre_label = ctk.CTkLabel(container, text=f"Genre: {manga.get('genre', 'N/A')}", font=ctk.CTkFont(size=12), wraplength=200, justify="left", anchor="w")
+        genre_label.grid(row=4, column=1, sticky="nw", padx=5)
+
+        status_label = ctk.CTkLabel(container, text=f"Status: {manga.get('status', 'Unknown')}", font=ctk.CTkFont(size=12), anchor="w")
+        status_label.grid(row=5, column=1, sticky="nw", padx=5)
 
         bookmark_empty = CTkImage(light_image=Image.open("image/bookempty.png"), size=(24, 24))
         bookmark_filled = CTkImage(light_image=Image.open("image/bookfilled.png"), size=(24, 24))
 
         # Check initial bookmark status for each manga
         bookmarked_mangas = get_bookmarked_mangas()
-        is_bookmarked = any(bm.get("name") == manga.get("name") for bm in bookmarked_mangas) # Use .get()
+        is_bookmarked = any(bm.get("name") == manga.get("name") for bm in bookmarked_mangas)
 
         bookmark_btn = ctk.CTkButton(
             container,
@@ -344,7 +403,8 @@ class MangaListSection(ctk.CTkFrame):
             image=bookmark_filled if is_bookmarked else bookmark_empty, # Set initial image
             font=ctk.CTkFont(family="Poppins", size=14, weight="bold")
         )
-        bookmark_btn.grid(row=4, column=0, padx=10, pady=(0, 10), sticky="w")
+        # Modified line: Place bookmark button in column 1 (text column) below status
+        bookmark_btn.grid(row=6, column=1, padx=5, pady=(5, 10), sticky="nw")
         bookmark_btn.configure(command=lambda b=bookmark_btn, m=manga: self.toggle_bookmark_list_item(b, m))
 
     # New method to refresh the bookmark buttons on the popular and latest sections

@@ -97,7 +97,7 @@ class AdminPage(ctk.CTkFrame):
 
     # === Create individual manga item container ===
     def create_manga_container(self, parent, manga, row, column):
-        container = ctk.CTkFrame(parent, width=220, height=380, corner_radius=8, fg_color="#222222")
+        container = ctk.CTkFrame(parent, width=220, height=450, corner_radius=8, fg_color="#222222")
         container.grid(row=row, column=column, padx=10, pady=10, sticky="nsew")
         container.grid_propagate(False)
 
@@ -112,6 +112,13 @@ class AdminPage(ctk.CTkFrame):
         ctk.CTkLabel(container, image=photo, text="").pack(pady=(10, 5))
         ctk.CTkLabel(container, text=manga["name"], font=ctk.CTkFont(size=16, weight="bold")).pack(pady=(0, 2))
         ctk.CTkLabel(container, text=f"Chapter {manga['chapter']}", font=ctk.CTkFont(size=14)).pack()
+
+        # Add Description and Author here - Font size increased to 12
+        ctk.CTkLabel(container, text=f"Desc: {manga.get('description', 'N/A')}",
+                     font=ctk.CTkFont(size=12), wraplength=180, justify="center").pack(pady=(2,0))
+        ctk.CTkLabel(container, text=f"Author: {manga.get('author', 'N/A')}",
+                     font=ctk.CTkFont(size=12)).pack(pady=(2,0))
+
         ctk.CTkLabel(container, text=f"Genre: {manga['genre']}", font=ctk.CTkFont(size=12)).pack()
         ctk.CTkLabel(container, text=f"Status: {manga['status']}", font=ctk.CTkFont(size=12)).pack()
 
@@ -134,8 +141,11 @@ class AdminPage(ctk.CTkFrame):
             image=self.bookmark_filled if is_bookmarked else self.bookmark_empty,
             font=ctk.CTkFont(size=14, weight="bold")
         )
-        bm_btn.pack(pady=10)
-        bm_btn.configure(command=lambda b=bm_btn, m=manga: self.toggle_bookmark_admin(b, m))
+        bm_btn.pack(side="bottom", pady=(5, 10))
+
+        # IMPORTANT: Set the command AFTER bm_btn is fully created to avoid UnboundLocalError
+        bm_btn.configure(command=lambda m=manga: self.toggle_bookmark_admin(bm_btn, m))
+
 
     # === Handle bookmark/unbookmark toggle action ===
     def toggle_bookmark_admin(self, btn, manga):
