@@ -632,7 +632,6 @@ if __name__ == "__main__":
         m["author"],
         m["chapter"],
         m["status"],
-        m["image"],
         m["summary"]
         ))
 
