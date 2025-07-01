@@ -268,6 +268,7 @@ class MangaListSection(ctk.CTkFrame):
     #            Latest update manga
     #=========================================
     def create_latest_update_section(self):
+        self.main_container.grid_columnconfigure(0, weight=1)
         header_frame = ctk.CTkFrame(self.main_container)
         header_frame.grid(row=2, column=0, sticky="ew", pady=(0, 10))
         header_frame.grid_columnconfigure(0, weight=1)
