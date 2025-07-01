@@ -132,6 +132,13 @@ def update_user_password(email, new_password):
     except Exception as e:
         return False, f"Database error: {e}"
     
+def user_exists(email):
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1 FROM users WHERE email = ?", (email,))
+        result = cursor.fetchone()
+        return result is not None
+
 # --- BOOKMARK OPERATIONS ---
 
 def get_next_available_bookmark_id():
