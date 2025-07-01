@@ -6,15 +6,43 @@ from user_model import add_bookmark, remove_bookmark_db, get_bookmarks_by_email
 
 # === STATIC MANGA LIST (existing content) ===
 manga_list = [
-    {"name": "Oshi no Ko", "chapter": 75, "genre": "Drama, Supernatural", "status": "Ongoing", "image": "image/oshi.webp"},
-    {"name": "Solo Leveling", "chapter": 179, "genre": "Action, Fantasy", "status": "Completed", "image": "image/solo.jpg"},
-    {"name": "Wind Breaker", "chapter": 460, "genre": "Action, Sports", "status": "Ongoing", "image": "image/braker.jfif"},
-    {"name": "Pokemon", "chapter": 150, "genre": "Adventure, Fantasy", "status": "Ongoing", "image": "image/pokemon.jfif"},
+    {   "name": "Oshi no Ko", 
+        "chapter": 75,
+        "description": "A story about a doctor reincarnated as the son of a famous idol, uncovering the dark side of the entertainment industry.",
+        "author": "Akasaka Aka",
+        "genre": "Drama, Supernatural", 
+        "status": "Ongoing", "image": "image/oshi.webp"
+    },
+
+    {   "name": "Green Green Greens", 
+        "chapter": 26,
+        "description": "A golf-themed manga following the journey of a talented young golfer.", 
+        "author": "Kawata Yuuji",
+        "genre": "Sports, Drama", 
+        "status": "Ongoing",
+        "image": "image/greens.jfif"
+    },
+
+    {   "name": "Wind Breaker",
+        "chapter": 460, 
+        "description": "Follows a high school student who joins a cycling team and discovers the world of competitive racing.", 
+        "author": "Jo Yongseok",
+        "genre": "Action, Sports",
+        "status": "Ongoing", "image": "image/braker.jfif"
+    },
+    {   "name": "Pokemon", 
+        "chapter": 150,    
+        "description": "Based on the popular video game, chronicling the adventures of trainers and their Pokémon.", 
+        "author": "Hidenori Kusaka",
+        "genre": "Adventure, Fantasy", 
+        "status": "Ongoing", "image": "image/pokemon.jfif"       
+    },
 ]
 
 # === DYNAMICALLY ADDED NEW MANGA LIST ===
 new_manga_list = [
-    # {"name": "Green Green Greens", "chapter": 26, "genre": "Sports, Drama", "status": "Ongoing", "image": "image/greens.jfif", "release_date": datetime.now()},
+    #sample new manga entries
+   # {"name": "The Days of Diamond", "chapter": "85", "genre": "Sports, Drama","status": "Ongoing","image": "image/Ace.jpg","release_date": datetime.now(), "description": "A baseball manga focusing on the struggles and triumphs of a high school team aiming for the national championship.", "author": "Yuji Terajima"},
 ]
 
 # === Returns static manga list ===

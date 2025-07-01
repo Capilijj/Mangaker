@@ -1,6 +1,6 @@
 import customtkinter as ctk
 from tkinter import messagebox
-from user_model import update_user_password
+from user_model import update_user_password, user_exists  # <-- import user_exists
 from Forgot_pass.forgotBackend import send_otp_email
 from PIL import Image
 import random
@@ -208,6 +208,11 @@ class ForgotPasswordPage(ctk.CTkFrame):
             return
         if not (6 <= len(new_password) <= 15):
             messagebox.showerror("Input Error", "Password must be 6-15 characters.")
+            return
+
+        # ======== Email existence validation ========
+        if not user_exists(email):
+            messagebox.showerror("Error", "Email does not exist in our records.")
             return
 
         def after_otp_verified():
