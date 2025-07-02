@@ -116,7 +116,7 @@ class MangaViewer(ctk.CTkFrame):
     def load_manga(self, index):
         manga = self.mangas[index]
         try:
-            img = Image.open(manga["image_path"]).resize((250, 320), Image.Resampling.LANCZOS)
+            img = Image.open(manga["image"]).resize((250, 320), Image.Resampling.LANCZOS)
             ctk_img = CTkImage(light_image=img, dark_image=img, size=(250, 320))
             self.image_label.configure(image=ctk_img, text="")
             self.image_label.image = ctk_img
