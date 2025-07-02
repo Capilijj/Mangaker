@@ -7,7 +7,8 @@ from customtkinter import CTkImage
 from Homepage.homeBackend import (
     get_mangas, get_completed_manga, get_latest_update,
     get_genres, get_status_options, get_order_options,
-    bookmark_manga, remove_bookmark, get_bookmarked_mangas
+    bookmark_manga, remove_bookmark, get_bookmarked_mangas,
+    get_display_manga
 )
 from SearchPage.searchBackend import search_mangas
 import os
@@ -31,7 +32,7 @@ class MangaViewer(ctk.CTkFrame):
         self.current_index = 0
         self.auto_switch_delay = 2000
 
-        self.mangas = get_mangas()
+        self.mangas = get_display_manga()
 
         self.container = ctk.CTkFrame(self, corner_radius=15, fg_color="#111010")
         self.container.pack(side="top", fill="x", padx=50, pady=20)

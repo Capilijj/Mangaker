@@ -42,8 +42,29 @@ connection.close()
 def get_mangas():
     return mangas
 
-# ==== Popular manga section ====
+def get_display_manga():
+    display_manga = [] # List to store manga data for display
+    i = 0 # counter for manga display
+    for manga in mangas:
+        if i < 10: # Limit to 10 manga for display
+            display_manga.append({
+                "title": manga["title"],
+                "author": manga["author"],
+                "chapter": manga["chapter"],
+                "genre": manga["genre"],
+                "status": manga["status"],
+                "image": manga["image"],
+                "summary": manga["summary"]
+            })
+            i += 1
+        else:
+            break
+
+    return display_manga
+
+# ==== Completed manga section ====
 def get_completed_manga():
+    i = 0 # counter to limit the number of completed manga fetched
     connection = sqlite3.connect('user.db')
     cursor = connection.cursor()
 
@@ -53,24 +74,31 @@ def get_completed_manga():
     completed_manga = []
 
     for row in manga_rows:
-        manga_id, title, author, latest, status, img_path, description = row
+        if i < 5:  # Limit to 5 completed manga
+            manga_id, title, author, latest, status, img_path, description = row
 
-        cursor.execute("SELECT genre FROM Genres WHERE mangaId = ?", (manga_id,))
-        genres = [g[0] for g in cursor.fetchall()] 
-        genre_str = ', '.join(genres) 
+            cursor.execute("SELECT genre FROM Genres WHERE mangaId = ?", (manga_id,))
+            genres = [g[0] for g in cursor.fetchall()] 
+            genre_str = ', '.join(genres) 
 
-        completed_manga.append({
-            "mangaId": manga_id,
-            "title": title,
-            "author": author,
-            "chapter": latest,
-            "genre": genre_str, 
-            "status": status,
-            "image": img_path,
-            "summary": description,
-        }) 
+            completed_manga.append({
+                "mangaId": manga_id,
+                "title": title,
+                "author": author,
+                "chapter": latest,
+                "genre": genre_str, 
+                "status": status,
+                "image": img_path,
+                "summary": description,
+            })
+
+            i += 1
+
+        else:
+            break
 
     connection.close()
+
     return completed_manga
 
 #latest manga updates
