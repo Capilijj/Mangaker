@@ -4,7 +4,7 @@ from customtkinter import CTkImage
 from user_model import get_bookmarks_by_email
 from users_db import current_session
 from user_model import remove_bookmark_db
-from Homepage.homeBackend import get_bookmarked_mangas, get_mangas, get_popular_manga, get_latest_update # Import these for comprehensive manga data
+from Homepage.homeBackend import get_bookmarked_mangas, get_mangas, get_completed_manga, get_latest_update # Import these for comprehensive manga data
 from Comics.ComicsBackend import get_all_manga
 
 class BookmarkPage(ctk.CTkFrame):
@@ -57,7 +57,7 @@ class BookmarkPage(ctk.CTkFrame):
         # ==== Combine and deduplicate all manga sources for a comprehensive list ====
         all_manga_sources = []
         all_manga_sources.extend(get_mangas()) # From local static list
-        all_manga_sources.extend(get_popular_manga()) # From popular manga list
+        all_manga_sources.extend(get_completed_manga()) # From completed manga list
         all_manga_sources.extend(get_latest_update()) # From latest update list
         all_manga_sources.extend(get_all_manga()) # From Admin backend
         all_manga_sources.extend(get_bookmarked_mangas()) # Ensure bookmarked mangas are also included if they are a separate source

@@ -1,6 +1,6 @@
 # SearchPage/searchBackend.py 
 
-from Homepage.homeBackend import get_mangas, get_popular_manga, get_latest_update
+from Homepage.homeBackend import get_mangas, get_completed_manga, get_latest_update
 from Comics.ComicsBackend import get_manga_list, new_manga_list
 
 # Helper function to sanitize string inputs (copied from adminBackend for consistency)
@@ -29,8 +29,8 @@ def search_mangas(query=None, genre_filter=None, status_filter=None, order_filte
             "chapter": _sanitize_string_input(manga.get("chapter"))
         })
     
-    # Add popular mangas from homeBackend
-    for manga in get_popular_manga():
+    # Add completed mangas from homeBackend
+    for manga in get_completed_manga():
         all_available_mangas.append({
             "title": _sanitize_string_input(manga.get("title") or manga.get("name")),
             "genre": _sanitize_string_input(manga.get("genre")),
@@ -93,7 +93,7 @@ def search_mangas(query=None, genre_filter=None, status_filter=None, order_filte
         # Show only popular manga that are Completed
         # Also ensure these are sanitized
         filtered_results = []
-        for manga in get_popular_manga():
+        for manga in get_completed_manga():
             if _sanitize_string_input(manga.get("status", "")).lower() == "completed":
                 filtered_results.append({
                     "title": _sanitize_string_input(manga.get("title") or manga.get("name")),

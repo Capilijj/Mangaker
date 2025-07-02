@@ -5,7 +5,7 @@ import customtkinter as ctk
 from PIL import Image, ImageDraw, ImageEnhance
 from customtkinter import CTkImage
 from Homepage.homeBackend import (
-    get_mangas, get_popular_manga, get_latest_update,
+    get_mangas, get_completed_manga, get_latest_update,
     get_genres, get_status_options, get_order_options,
     bookmark_manga, remove_bookmark, get_bookmarked_mangas
 )
@@ -201,7 +201,7 @@ class MangaViewer(ctk.CTkFrame):
         self.after(self.auto_switch_delay, self.auto_switch)
 
 #=========================================================================================
-#           MangaListSection class to display popular and latest manga                  =
+#           MangaListSection class to display completed and latest manga                  =
 #=========================================================================================
 class MangaListSection(ctk.CTkFrame):
     def __init__(self, parent, show_manga_list_callback):
@@ -213,33 +213,33 @@ class MangaListSection(ctk.CTkFrame):
         self.main_container = ctk.CTkFrame(self, corner_radius=15, fg_color="transparent")
         self.main_container.pack(fill="x", padx=70, pady=20)
 
-        self.popular_manga = get_popular_manga()
+        self.completed_manga = get_completed_manga()
         self.latest_update = get_latest_update()
         self.show_manga_list_callback = show_manga_list_callback
 
         self.refresh_bookmark_buttons() # Initial call to create sections and set buttons
     #=========================================
-    #           Popular manga
+    #           Completed manga
     #========================================
-    def create_popular_section(self):
-        label = ctk.CTkLabel(self.main_container, text="POPULAR TODAY", font=ctk.CTkFont(size=20, weight="bold"))
+    def create_completed_section(self):
+        label = ctk.CTkLabel(self.main_container, text="COMPLETED SERIES", font=ctk.CTkFont(size=20, weight="bold"))
         label.grid(row=0, column=0, pady=(0, 15), sticky="w")
 
-        # Replaced CTkScrollableFrame with a regular CTkFrame for popular manga
-        popular_frame = ctk.CTkFrame(self.main_container, fg_color="transparent")
-        popular_frame.grid(row=1, column=0, pady=(10, 30), sticky="ew")
+        # Replaced CTkScrollableFrame with a regular CTkFrame for completed manga
+        completed_frame = ctk.CTkFrame(self.main_container, fg_color="transparent")
+        completed_frame.grid(row=1, column=0, pady=(10, 30), sticky="ew")
 
-        # Configure columns in popular_frame to expand equally
+        # Configure columns in completed_frame to expand equally
         # This will ensure items spread out evenly
-        for i in range(len(self.popular_manga)):
-            popular_frame.grid_columnconfigure(i, weight=1)
+        for i in range(len(self.completed_manga)):
+            completed_frame.grid_columnconfigure(i, weight=1)
 
-        # Fixed size for each manga container in popular section
+        # Fixed size for each manga container in completed section
         ITEM_WIDTH = 200 # Increased width for more space
         ITEM_HEIGHT = 400 # Adjusted height to accommodate all fields and button
 
-        for idx, manga in enumerate(self.popular_manga):
-            container = ctk.CTkFrame(popular_frame, corner_radius=8, fg_color="#222222", width=ITEM_WIDTH, height=ITEM_HEIGHT)
+        for idx, manga in enumerate(self.completed_manga):
+            container = ctk.CTkFrame(completed_frame, corner_radius=8, fg_color="#222222", width=ITEM_WIDTH, height=ITEM_HEIGHT)
             container.grid(row=0, column=idx, padx=10, sticky="ns") # Use sticky="ns" to ensure vertical filling
             container.pack_propagate(False) # Prevent frame from shrinking to fit content
 
@@ -249,7 +249,7 @@ class MangaListSection(ctk.CTkFrame):
             container.grid_rowconfigure(6, weight=1)
 
             try:
-                # Reverted: Use "image" as the key for popular manga images
+                # Reverted: Use "image" as the key for completed manga images
                 img = Image.open(manga.get("image", "")).resize((120, 180)) # Maintain image size
                 photo = CTkImage(light_image=img, size=(120, 180))
             except Exception:
@@ -260,13 +260,13 @@ class MangaListSection(ctk.CTkFrame):
             img_label.grid(row=0, column=0, pady=(10, 5))
 
             # Rearranged and added description and author
-            name_label = ctk.CTkLabel(container, text=manga.get("name", "N/A"), font=ctk.CTkFont(size=16, weight="bold"), wraplength=ITEM_WIDTH-20, justify="center")
+            name_label = ctk.CTkLabel(container, text=manga.get("title", "N/A"), font=ctk.CTkFont(size=16, weight="bold"), wraplength=ITEM_WIDTH-20, justify="center")
             name_label.grid(row=1, column=0, pady=(0, 2))
 
             chapter_label = ctk.CTkLabel(container, text=f"Chapter {manga.get('chapter', 'N/A')}", font=ctk.CTkFont(size=14))
             chapter_label.grid(row=2, column=0)
 
-            desc_label = ctk.CTkLabel(container, text=f"Desc: {manga.get('desc', 'N/A')}", font=ctk.CTkFont(size=12), wraplength=ITEM_WIDTH-20, justify="left")
+            desc_label = ctk.CTkLabel(container, text=f"Desc: {manga.get('summary', 'N/A')}", font=ctk.CTkFont(size=12), wraplength=ITEM_WIDTH-20, justify="left")
             desc_label.grid(row=3, column=0, pady=(2, 0))
 
             author_label = ctk.CTkLabel(container, text=f"Author: {manga.get('author', 'N/A')}", font=ctk.CTkFont(size=12))
@@ -407,13 +407,13 @@ class MangaListSection(ctk.CTkFrame):
         bookmark_btn.grid(row=6, column=1, padx=5, pady=(5, 10), sticky="nw")
         bookmark_btn.configure(command=lambda b=bookmark_btn, m=manga: self.toggle_bookmark_list_item(b, m))
 
-    # New method to refresh the bookmark buttons on the popular and latest sections
+    # New method to refresh the bookmark buttons on the completed and latest sections
     def refresh_bookmark_buttons(self):
         # Clear existing sections
         for widget in self.main_container.winfo_children():
             widget.destroy()
         # Re-create sections to update bookmark states
-        self.create_popular_section()
+        self.create_completed_section()
         self.create_latest_update_section()
 
 #==========================================================================================
