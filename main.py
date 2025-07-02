@@ -8,13 +8,15 @@ from Homepage.homeUi import DashboardPage
 from Profile.profileUi import ProfilePage
 from Homepage.homeBackend import get_user_prof
 from SearchPage.searchBackend import search_mangas
-from Admin.adminUi import AdminPage
+from Comics.ComicsUi import ComicsPage
 from Bookmark.bookmarkUi import BookmarkPage
 from SearchPage.searchUi import SearchPage
-
+from administrator import AdminPage #administrator.py
 from PIL import Image, ImageDraw
 from customtkinter import CTkImage
 import os
+from user_model import init_user_db, authenticate_user, get_current_user_role, clear_current_user # Added authenticate_user, get_current_user_role, clear_current_user
+from tkinter import messagebox # Added for error messages
 
 # =========================================================================================
 #                          Function to make the image Circle
@@ -95,11 +97,6 @@ class TopBar(ctk.CTkFrame):
         self.bell_label = ctk.CTkLabel(self.right_container, image=self.bell_icon_img, text="")
         self.bell_label.pack(side="left", padx=(5, 10))
 
-        # --- REMOVED: Notification count label ---
-        # self.notif_count_label = ctk.CTkLabel(...)
-        # self.notif_count_label.place(...)
-        # self.update_notification_count(0) # Removed this call
-
         # Connect bell click to show dialog
         self.bell_label.bind("<Button-1>", lambda e: self.show_notification_dialog())
 
@@ -170,16 +167,6 @@ class TopBar(ctk.CTkFrame):
             self.buttons[key].configure(border_color="black", border_width=2)
             self.active_button = self.buttons[key]
 
-    # --- REMOVED: update_notification_count method ---
-    # def update_notification_count(self, count):
-    #     """Updates the notification count displayed on the bell icon."""
-    #     if count > 0:
-    #         self.notif_count_label.configure(text=str(count), fg_color="red")
-    #         self.notif_count_label.place(relx=0.8, rely=0.1, anchor="ne") # Show it
-    #     else:
-    #         self.notif_count_label.configure(text="")
-    #         self.notif_count_label.place_forget() # Hide it if count is 0
-
     def trigger_search_from_topbar(self):
         """Called when the top bar search button is clicked."""
         query = self.search_entry.get().strip()
@@ -215,9 +202,7 @@ class TopBar(ctk.CTkFrame):
 
         self.notif_dialog.geometry(f"300x{height}+{x}+{y}")
 
-        # --- MODIFIED: Notification text (no count) ---
         notification_text = "🔔 You have no new notifications."
-        # Removed logic that checks current_count and adds to text
 
         label = ctk.CTkLabel(self.notif_dialog, text=notification_text, text_color="white")
         label.pack(padx=10, pady=10)
@@ -238,65 +223,42 @@ class App(ctk.CTk):
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        # --- REMOVED: Notification Count Management and Simulation ---
-        # self._notification_count = 0
-        # self.after(2000, self.simulate_notifications)
-
-        # Initialize TopBar with navigation commands
+        # Initialize TopBar (will be packed/grid later when user is logged in)
         self.topbar = TopBar(
             self,
             on_home=self.show_dashboard,
             on_bookmark=self.show_bookmark,
-            on_comics=self.show_admin,
+            on_comics=self.show_Comics,
             on_profile=self.show_profile,
             on_search=self.initiate_search_display
         )
-        self.topbar.grid(row=0, column=0, sticky="ew")
+        # self.topbar.grid(row=0, column=0, sticky="ew") # Do not grid initially
 
         # Container for different pages
         self.container = ctk.CTkFrame(self)
         self.container.grid(row=1, column=0, sticky="nsew")
 
         # Initialize all pages
-        self.login_page = LoginPage(self.container, self.show_signup, self.show_forgot_password, self.show_dashboard)
+        self.login_page = LoginPage(self.container, self.show_signup, self.show_forgot_password, on_login_success_user=self.show_dashboard, on_login_success_admin=self.show_administrator, controller=self)
         self.signup_page = SignUpPage(self.container, self.show_login)
         self.forgot_password_page = ForgotPasswordPage(self.container, self.show_login)
         self.dashboard_page = DashboardPage(self.container, controller=self)
         self.profile_page = ProfilePage(self.container, on_logout=self.show_login, topbar=self.topbar)
         self.bookmark_page = BookmarkPage(self.container, on_bookmark_change=self.refresh_all_bookmark_related_uis)
-        self.admin_page = AdminPage(self.container, controller=self)
+        self.Comics_page = ComicsPage(self.container, controller=self)
         self.search_results_page = SearchPage(self.container, controller=self)
+        self.administrator_page = AdminPage(self.container, controller=self) # Initialize AdminPage
 
         # Place all pages in the same grid position within the container
         for page in [
             self.login_page, self.signup_page, self.forgot_password_page,
-            self.dashboard_page, self.profile_page, self.bookmark_page, self.admin_page,
-            self.search_results_page
+            self.dashboard_page, self.profile_page, self.bookmark_page, self.Comics_page,
+            self.search_results_page,
+            self.administrator_page
         ]:
             page.place(relx=0, rely=0, relwidth=1, relheight=1)
 
-        self.show_login()
-
-    # =========================================================================================
-    #                                  REMOVED: Notification Handling methods
-    # =========================================================================================
-    # def get_notification_count(self):
-    #     return self._notification_count
-    #
-    # def set_notification_count(self, count):
-    #     self._notification_count = count
-    #     self.topbar.update_notification_count(self._notification_count)
-    #
-    # def add_notification(self, count=1):
-    #     self.set_notification_count(self._notification_count + count)
-    #
-    # def clear_notifications(self):
-    #     self.set_notification_count(0)
-    #
-    # def simulate_notifications(self):
-    #     self.add_notification(1)
-    #     print(f"Simulated new notification. Total: {self._notification_count}")
-    #     self.after(10000, self.simulate_notifications)
+        self.show_login() # Start with the login page
 
     # =========================================================================================
     #                                  Navigation Methods
@@ -308,11 +270,13 @@ class App(ctk.CTk):
     # LOG IN METHOD
     def show_login(self):
         self.title("Login")
+        # Ensure topbar is hidden when on login/signup/forgot password pages
         self.topbar.grid_forget()
         self.login_page.clear_fields()
         self.login_page.tkraise()
-        # --- REMOVED: Clear notifications here ---
-        # self.clear_notifications()
+        # Ensure CURRENT_USER is cleared on logout/back to login
+        clear_current_user()
+
 
     # Sign Up METHOD
     def show_signup(self):
@@ -354,12 +318,25 @@ class App(ctk.CTk):
         self.bookmark_page.tkraise()
 
     # Comics/Admin METHOD (as per your mapping)
-    def show_admin(self):
-        self.title("Comics (Admin)")
+    def show_Comics(self):
+        self.title("Comics")
         self.show_topbar()
         self.topbar.set_active_button("comics")
-        self.admin_page.refresh_admin_bookmark_states()
-        self.admin_page.tkraise()
+        self.Comics_page.refresh_Comics_bookmark_states()
+        self.Comics_page.tkraise()
+
+    def show_administrator(self):
+        self.title("Administrator")
+        self.topbar.grid_forget()  # Hide topbar for admin page
+
+        # Essential: Refresh admin UI elements based on CURRENT_USER
+        self.administrator_page.refresh_profile_display()
+
+        # Force display
+        self.administrator_page.lift()
+        self.administrator_page.tkraise()
+        self.administrator_page.update()
+
 
     # Search_clicked METHOD (called by top bar search button)
     def initiate_search_display(self, query=None, genre_filter=None, status_filter=None, order_filter=None):
@@ -398,13 +375,13 @@ class App(ctk.CTk):
         )
         self.search_results_page.tkraise()
         self.search_results_page.refresh_bookmark_states()
-        
+
     def refresh_all_bookmark_related_uis(self):
         print("Refreshing all bookmark-related UIs...")
         if hasattr(self.dashboard_page, 'refresh_all_bookmark_states'):
             self.dashboard_page.refresh_all_bookmark_states()
-        if hasattr(self.admin_page, 'refresh_admin_bookmark_states'):
-            self.admin_page.refresh_admin_bookmark_states()
+        if hasattr(self.Comics_page, 'refresh_Comics_bookmark_states'):
+            self.Comics_page.refresh_Comics_bookmark_states()
         if hasattr(self.bookmark_page, 'display_bookmarks'):
             self.bookmark_page.display_bookmarks()
         if hasattr(self.search_results_page, 'refresh_bookmark_states'):
@@ -415,8 +392,7 @@ class App(ctk.CTk):
 # =========================================================================================
 
 if __name__ == "__main__":
-    from user_model import init_user_db
-    init_user_db()
+    init_user_db() # Ensure the database is initialized and admin user exists
 
     app = App()
     app.mainloop()

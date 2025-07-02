@@ -5,7 +5,7 @@ from user_model import get_bookmarks_by_email
 from users_db import current_session
 from user_model import remove_bookmark_db
 from Homepage.homeBackend import get_bookmarked_mangas, get_mangas, get_popular_manga, get_latest_update # Import these for comprehensive manga data
-from Admin.adminBackend import get_all_manga
+from Comics.ComicsBackend import get_all_manga
 
 class BookmarkPage(ctk.CTkFrame):
     def __init__(self, parent, on_bookmark_change=None):

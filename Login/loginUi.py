@@ -2,7 +2,8 @@
 import customtkinter as ctk
 from tkinter import messagebox
 from PIL import Image, ImageDraw
-from Login.loginBackend import authenticate
+from Login.loginBackend import authenticate # Assuming authenticate is here
+from user_model import get_user_by_email # Import get_user_role and get_user_by_email
 
 #======== function to crop image into circle ========
 def make_circle(img: Image.Image) -> Image.Image:
@@ -16,11 +17,14 @@ def make_circle(img: Image.Image) -> Image.Image:
 
 #======== log in page class ========
 class LoginPage(ctk.CTkFrame):
-    def __init__(self, parent, switch_to_register, switch_to_forgot_password=None, on_login_success=None):
+    # Binago ang __init__ parameters
+    def __init__(self, parent, switch_to_register, switch_to_forgot_password=None, on_login_success_user=None, on_login_success_admin=None, controller=None):
         super().__init__(parent)
         self.switch_to_register = switch_to_register
         self.switch_to_forgot_password = switch_to_forgot_password
-        self.on_login_success = on_login_success
+        self.on_login_success_user = on_login_success_user # Callback for regular user
+        self.on_login_success_admin = on_login_success_admin # Callback for admin
+        self.controller = controller
         #======== background image ========
         try:
             bg_image = Image.open("image/bg.jpg").resize((1500, 710), Image.Resampling.LANCZOS)
@@ -48,7 +52,7 @@ class LoginPage(ctk.CTkFrame):
 
         #======== logo text ========
         logo_text_label = ctk.CTkLabel(self.card, text="James Mangaker",
-                                       font=ctk.CTkFont(size=24, weight="bold"), text_color="black")
+                                         font=ctk.CTkFont(size=24, weight="bold"), text_color="black")
         logo_text_label.pack(pady=(10, 10))
 
         #======== email input ========
@@ -83,15 +87,15 @@ class LoginPage(ctk.CTkFrame):
 
         #======== forgot password label ========
         self.forgot_password = ctk.CTkLabel(self.card, text="Forgot Password?", text_color="#3b82f6",
-                                            cursor="hand2", font=ctk.CTkFont(size=12))
+                                             cursor="hand2", font=ctk.CTkFont(size=12))
         self.forgot_password.pack(anchor="e", padx=20)
         if self.switch_to_forgot_password:
             self.forgot_password.bind("<Button-1>", lambda e: self.switch_to_forgot_password())
 
         #======== login button ========
         self.login_button = ctk.CTkButton(self.card, text="Log In", width=300, height=40, corner_radius=10,
-                                          fg_color="#39ff14", hover_color="#28c20e", text_color="black",
-                                          command=self.login)
+                                             fg_color="#39ff14", hover_color="#28c20e", text_color="black",
+                                             command=self.login)
         self.login_button.pack(pady=(5, 0))
 
         #======== signup link section ========
@@ -102,7 +106,7 @@ class LoginPage(ctk.CTkFrame):
         not_member_label.pack(side="left")
 
         create_account = ctk.CTkLabel(signup_frame, text="Create New Account", text_color="#3b82f6",
-                                      cursor="hand2")
+                                         cursor="hand2")
         create_account.pack(side="left", padx=(5))
         create_account.bind("<Button-1>", lambda e: self.switch_to_register())
 
@@ -112,9 +116,9 @@ class LoginPage(ctk.CTkFrame):
 
         #======== google login button ========
         google_button = ctk.CTkButton(self.card, text="Continue with Google", width=300, height=40,
-                                      fg_color="#1a1a1a", text_color="white",
-                                      hover_color="#2b2c2b", border_width=1, border_color="#ccc",
-                                      command=lambda: messagebox.showinfo("Google", "Google login not yet implemented."))
+                                         fg_color="#1a1a1a", text_color="white",
+                                         hover_color="#2b2c2b", border_width=1, border_color="#ccc",
+                                         command=lambda: messagebox.showinfo("Google", "Google login not yet implemented."))
         google_button.pack()
 
     #======== function to toggle password visibility ========
@@ -134,24 +138,33 @@ class LoginPage(ctk.CTkFrame):
     def login(self):
         email = self.email_entry.get()
         password = self.password_entry.get()
+
         success, msg = authenticate(email, password)
         if success:
-            messagebox.showinfo("Login", msg)
-            self.clear_fields()
-            if self.on_login_success:
-                self.on_login_success()
+            user_info = get_user_by_email(email)
+            if user_info and (
+                user_info.get('role') == 'admin' or email.lower() == "jamesmangaker@gmail.com"
+            ):
+                messagebox.showinfo("Login Success", "Welcome, Administrator!")
+                if self.on_login_success_admin:
+                    self.on_login_success_admin()
+            else:
+                username = user_info.get('username', 'User') if user_info else 'User'
+                messagebox.showinfo("Login Success", f"Welcome, {username}!")
+                if self.on_login_success_user:
+                    self.on_login_success_user()
         else:
             messagebox.showerror("Login Failed", msg)
 
     #======== clear entries and reset placeholders ========
     def clear_fields(self):
-        self.email_entry.delete(0, 'end')  # clear email field
-        self.email_entry.configure(placeholder_text="Email")  # restore placeholder
+        self.email_entry.delete(0, 'end')
+        self.email_entry.configure(placeholder_text="Email")
 
-        self.password_entry.delete(0, 'end')  # clear password field
-        self.password_entry.configure(placeholder_text="Password")  # restore placeholder
+        self.password_entry.delete(0, 'end')
+        self.password_entry.configure(placeholder_text="Password")
 
-        self.password_entry.configure(show="*")  # reset password to hidden
+        self.password_entry.configure(show="*")
         if self.icon_closed:
-            self.toggle_password_button.configure(image=self.icon_closed)  # reset eye icon
-        self.show_password = False  # reset password toggle state
+            self.toggle_password_button.configure(image=self.icon_closed)
+        self.show_password = False
