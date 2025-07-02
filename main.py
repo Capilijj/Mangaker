@@ -625,13 +625,14 @@ if __name__ == "__main__":
 
     for m in mangas:
         cursor.execute("""
-            INSERT INTO Manga (title, author, status, img_path, description)
+            INSERT INTO Manga (title, author, latest, status, img_path, description)
             VALUES (?, ?, ?, ?, ?, ?) 
         """, (
         m["name"],
         m["author"],
         m["chapter"],
         m["status"],
+        m["image"],
         m["summary"]
         ))
 
@@ -641,12 +642,12 @@ if __name__ == "__main__":
     genres = [g.strip() for g in m["genre"].split(",")] 
     for genre in genres: # loop para maistore yung mga genre ng inserted manga sa genre table
         cursor.execute("""
-            INSERT INTO Genre (mangaId, genre)
+            INSERT INTO Genres (mangaId, genre)
             VALUES (?, ?)
         """, (manga_id, genre))
 
     connection.commit()
-    connection.close()
+    connection.close()  
 
     app = App()
     app.mainloop()
