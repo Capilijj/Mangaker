@@ -32,11 +32,11 @@ def validate_user_data(email, username, password, confirm_password, image_path=N
 
 # --- Finalize registration ---
 def finalize_registration(email, username, password, image_path):
-    hashed_password = hashlib.sha256(password.encode()).hexdigest()
-    success, message = add_user(email, username, hashed_password, image_path)
-    if success:
-        current_session["email"] = email
-    return success, message
+    # Do NOT hash here, let add_user handle hashing
+        success, message = add_user(email, username, password, image_path)
+        if success:
+            current_session["email"] = email
+        return success, message
 
 # --- Send OTP ---
 def send_otp_email(email, otp):

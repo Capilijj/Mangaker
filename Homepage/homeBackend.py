@@ -6,7 +6,7 @@ from user_model import get_user_by_email, add_bookmark, remove_bookmark_db, get_
 from users_db import current_session  # assuming you moved current_session here from users_db
 
 # ==== Import functions from Admin backend ====
-from Admin.adminBackend import get_manga_list, new_manga_list, get_new_releases_backend
+from Comics.ComicsBackend import get_manga_list, new_manga_list, get_new_releases_backend
 
 
 # ==== Fetching Manga from the Database ==== 

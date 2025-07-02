@@ -5,7 +5,7 @@ from customtkinter import CTkImage
 import os
 
 # === Importing backend functions for manga operations ===
-from Admin.adminBackend import (
+from Comics.ComicsBackend import (
     get_manga_list,
     bookmark_manga_admin,
     remove_bookmark_admin,
@@ -25,8 +25,8 @@ def make_circle(img):
     output.paste(img, (0, 0), mask)
     return output
 
-# === Admin Page UI Class ===
-class AdminPage(ctk.CTkFrame):
+# === Comics Page UI Class ===
+class ComicsPage(ctk.CTkFrame):
     def __init__(self, parent, controller, on_bookmark_change=None):
         super().__init__(parent)
         self.controller = controller
@@ -166,7 +166,7 @@ class AdminPage(ctk.CTkFrame):
             self.on_bookmark_change()
 
     # === Refresh the entire admin manga list and new releases ===
-    def refresh_admin_bookmark_states(self):
+    def refresh_Comics_bookmark_states(self):
         self.manga_data = get_manga_list()
         self.new_release_data = self.get_new_releases()
         self.create_manga_grid(self.main_manga_grid_container)
@@ -177,6 +177,8 @@ class AdminPage(ctk.CTkFrame):
         return get_new_releases_backend()
 
     # === Create the grid for new manga releases ===
+    #baguhin ang logic nito pre basta dito mag didisplay yung add ni admin inalis ko nayung
+    # new release sa backend ng adminBackend.py since hindi tayo hardcoded
     def create_new_release_grid(self, parent_frame):
         for widget in parent_frame.winfo_children():
             widget.destroy()

@@ -477,7 +477,7 @@ class DashboardPage(ctk.CTkFrame):
         self.manga_viewer.pack(fill="both", expand=True)
 
         # Updated to call show_admin directly or ensure show_manga_list calls show_admin
-        self.mangalist_section = MangaListSection(self.content_container, show_manga_list_callback=self.controller.show_admin)
+        self.mangalist_section = MangaListSection(self.content_container, show_manga_list_callback=self.controller.show_Comics)
         self.mangalist_section.controller = self.controller # Pass controller to MangaListSection
         self.mangalist_section.pack(fill="x", expand=False, pady=10)
 

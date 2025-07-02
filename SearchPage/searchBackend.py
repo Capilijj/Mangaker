@@ -1,7 +1,7 @@
 # SearchPage/searchBackend.py 
 
 from Homepage.homeBackend import get_mangas, get_popular_manga, get_latest_update
-from Admin.adminBackend import get_manga_list, new_manga_list
+from Comics.ComicsBackend import get_manga_list, new_manga_list
 
 # Helper function to sanitize string inputs (copied from adminBackend for consistency)
 def _sanitize_string_input(value):

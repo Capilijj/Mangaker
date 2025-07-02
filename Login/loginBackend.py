@@ -1,4 +1,4 @@
-from user_model import get_user_by_email
+from user_model import get_user_by_email, CURRENT_USER
 from users_db import current_session
 import hashlib
 
@@ -17,6 +17,13 @@ def authenticate(email, password):
         return False, "Incorrect password."
 
     current_session["email"] = email
+
+    # Set CURRENT_USER for the rest of the app
+    CURRENT_USER["username"] = user["username"]
+    CURRENT_USER["email"] = user["email"]
+    CURRENT_USER["role"] = user.get("role", "user")
+    CURRENT_USER["profile_image"] = user.get("profile_image", None)
+
     return True, "Login successful."
 
 def get_user_prof():
