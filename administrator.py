@@ -4,6 +4,8 @@ from PIL import Image, ImageDraw
 import os
 from user_model import get_user_prof, get_current_username, clear_current_user
 import sqlite3
+from datetime import datetime, timedelta
+import shutil
 
 # Re-define make_circle here just in case, though it's also in main.py
 # If you prefer a single source, you could import it, but having it local
@@ -236,12 +238,28 @@ class AdminPage(ctk.CTkScrollableFrame):
     def upload_photo(self):
         file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
         if file_path:
+            save_dir = "image"
+
+            os.makedirs(save_dir, exist_ok=True)  # Ensure the directory exists
+            
+            # Get the original file name and extension
+            original_name = os.path.basename(file_path)
+            name, ext = os.path.splitext(original_name)
+            
+            # Construct a new file path in the image directory
+            save_path = os.path.join(save_dir, f"{name}{ext}")
+
+
             try:
+                shutil.copy(file_path, save_path)
+                print(f"Image successfully moved to: {save_path}")  # Debug message to verify path
+
+                
                 img = Image.open(file_path).resize((180, 220), Image.Resampling.LANCZOS)
                 image_ctk = ctk.CTkImage(light_image=img, dark_image=img, size=(180, 220))
                 self.image_label.configure(image=image_ctk, text="")
                 self.image_label.image = image_ctk
-                self.current_image_path = file_path
+                self.current_image_path = save_path
             except Exception as e:
                 messagebox.showerror("Upload Error", str(e))
     #=================================================================================================================
@@ -285,19 +303,24 @@ class AdminPage(ctk.CTkScrollableFrame):
         if not title or not genres or status == "Select Status" or not author or not desc:
             messagebox.showerror("Error", "Please complete all fields.")
             return
-            
+
         try:
+            # setting timezone to UTC+8 for the update date
+            ph_time = datetime.utcnow() + timedelta(hours=8)
+            ph_timestamp = ph_time.strftime('%Y-%m-%d %H:%M:%S')
+
+            # Connect to the database and insert the manga data
             connection = sqlite3.connect('user.db')
             cursor = connection.cursor()
             cursor.execute("""
                 INSERT INTO Manga (title, author, latest, status, img_path, description, update_date)
-                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                """, (title, author, 1, status, img_path, desc))
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (title, author, 1, status, img_path, desc, ph_timestamp))
             
             manga_id = cursor.lastrowid  # Get the ID of the newly inserted manga
 
             for genre in genres:
-                cursor.execute("INSERT INTO Genres (manga_id, genre) VALUES (?, ?)", (manga_id, genre))
+                cursor.execute("INSERT INTO Genres (mangaId, genre) VALUES (?, ?)", (manga_id, genre))
 
             connection.commit()
             connection.close()
@@ -315,10 +338,12 @@ class AdminPage(ctk.CTkScrollableFrame):
         self.status.set("Select Status")
         self.author_entry.delete(0, "end")
         self.description.delete("1.0", "end")
+
         # To clear the image, set the image property to None and update the label text
+        
         self.image_label.configure(image=None, text="Upload Image")
-     #   self.image_label.image = None # Important to prevent garbage collection for CTkImage 
-        #bali hnd nagana yan
+        self.image_label.image = None # Important to prevent garbage collection for CTkImage 
+   
     #=================================================================================================================
     #log out logic (back to log in)
     def logout(self):
