@@ -101,12 +101,15 @@ def get_completed_manga():
     return completed_manga
 
 #latest manga updates
-def get_latest_update(limit = 9): # default limit to 9 mangas to display
+def get_latest_update(): 
+    limit = 9  # Limit to 9 latest updates
+
     connection = sqlite3.connect('user.db')
     cursor = connection.cursor()
     
     cursor.execute(""" 
-        SELECT ,,, FROM Manga
+        SELECT mangaId, title, author, latest, status, img_path, description, update_date 
+        FROM Manga
         ORDER BY update_date DESC
         LIMIT ?
     """, (limit,))  # Fetching latest updates with a limit
@@ -131,7 +134,6 @@ def get_latest_update(limit = 9): # default limit to 9 mangas to display
             "status": status,
             "image": img_path,
             "summary": description,
-            "update_date": update_date
         })
     
     connection.close()
