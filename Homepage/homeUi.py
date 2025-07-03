@@ -6,11 +6,10 @@ from PIL import Image, ImageDraw, ImageEnhance
 from customtkinter import CTkImage
 from Homepage.homeBackend import (
     get_mangas, get_completed_manga, get_latest_update,
-    get_genres, get_status_options, get_order_options,
     bookmark_manga, remove_bookmark, get_bookmarked_mangas,
     get_display_manga
 )
-from SearchPage.searchBackend import search_mangas
+
 import os
 
 def make_circle(img):
@@ -425,51 +424,6 @@ class DashboardPage(ctk.CTkFrame):
         super().__init__(parent)
         self.controller = controller
 
-        # ========== FILTERS BELOW HEADER =========
-        self.filter_row_frame = ctk.CTkFrame(self, fg_color="transparent", height=50)
-        self.filter_row_frame.pack(side="top", fill="x", pady=(0, 10))
-        self.filter_row_frame.pack_propagate(False)
-
-        self.filter_inner_frame = ctk.CTkFrame(self.filter_row_frame, fg_color="transparent")
-        self.filter_inner_frame.place(relx=0.5, rely=0, anchor="n")
-
-        filter_search_icon_path = r"image/glass2.png"
-        if os.path.exists(filter_search_icon_path):
-            filter_icon_img = Image.open(filter_search_icon_path).resize((25, 25), Image.Resampling.LANCZOS)
-            self.filter_search_icon = CTkImage(light_image=filter_icon_img, dark_image=filter_icon_img, size=(25, 25))
-        else:
-            self.filter_search_icon = None
-
-        self.filter_search_button = ctk.CTkButton(
-            self.filter_inner_frame,
-            text="Search by title",
-            command=self.filter_search_action,
-            fg_color="#39ff14",
-            hover_color="#1f8112",
-            text_color="black",
-            corner_radius=10,
-            image=self.filter_search_icon,
-            compound="left"
-        )
-        self.filter_search_button.grid(row=0, column=0, padx=5, pady=5)
-
-        self.genre_option_menu = ctk.CTkOptionMenu(self.filter_inner_frame, values=get_genres(), button_color="#26c50a" , button_hover_color="#1f8112")
-        self.genre_option_menu.set("Genre")
-        self.genre_option_menu.grid(row=0, column=1, padx=5, pady=5)
-
-        self.status_option = ctk.CTkOptionMenu(self.filter_inner_frame, values=get_status_options(), button_color="#26c50a", button_hover_color="#1f8112")
-        self.status_option.set("Status")
-        self.status_option.grid(row=0, column=2, padx=5, pady=5)
-
-        self.order_option = ctk.CTkOptionMenu(self.filter_inner_frame, values=get_order_options(), button_color="#26c50a", button_hover_color="#1f8112")
-        self.order_option.set("Order By Default")
-        self.order_option.grid(row=0, column=3, padx=5, pady=5)
-
-        grey_bg = "#4b4848"
-        self.genre_option_menu.configure(fg_color=grey_bg)
-        self.status_option.configure(fg_color=grey_bg)
-        self.order_option.configure(fg_color=grey_bg)
-
         # ========== MAIN CONTENT AREA WITH SCROLLABLE FRAME ============
         self.content_container = ctk.CTkScrollableFrame(self, fg_color="transparent")
         self.content_container.pack(fill="both", expand=True)
@@ -489,37 +443,8 @@ class DashboardPage(ctk.CTkFrame):
     # =============================================
 
     def home_action(self):
-        self.filter_row_frame.pack(side="top", fill="x", pady=(0, 10))
         self.content_container.pack(fill="both", expand=True)
-        self.genre_option_menu.set("Genre")
-        self.status_option.set("Status")
-        self.order_option.set("Order By Default")
-        self.update_filter_visibility()
         self.controller.title("Dashboard")
-
-    def update_filter_visibility(self):
-        self.filter_row_frame.pack(side="top", fill="x", pady=(0, 10))
-
-    def filter_search_action(self):
-        print("Filter search button clicked")
-        genre = self.genre_option_menu.get()
-        status = self.status_option.get()
-        order = self.order_option.get()
-
-        # Convert "Genre", "Status", "Order By Default" to None for searchBackend
-        genre = None if genre == "Genre" else genre
-        status = None if status == "Status" else status
-        order = None if order == "Order By Default" else order
-
-        # Initiate the search display (this will navigate to the SearchPage)
-        if self.controller and hasattr(self.controller, 'initiate_search_display'):
-            self.controller.initiate_search_display(query=None, genre_filter=genre, status_filter=status, order_filter=order)
-
-        # Reset the filter options on the DashboardPage AFTER the search is initiated
-        self.genre_option_menu.set("Genre")
-        self.status_option.set("Status")
-        self.order_option.set("Order By Default")
-        print("Filter options reset after search initiation.")
 
     # New method to refresh bookmark states for all relevant sections
     def refresh_all_bookmark_states(self):

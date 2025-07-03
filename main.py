@@ -15,7 +15,7 @@ from administrator import AdminPage #administrator.py
 from PIL import Image, ImageDraw
 from customtkinter import CTkImage
 import os
-from user_model import init_user_db, authenticate_user, get_current_user_role, clear_current_user # Added authenticate_user, get_current_user_role, clear_current_user
+from user_model import init_user_db, clear_current_user # Added authenticate_user, get_current_user_role, clear_current_user
 from tkinter import messagebox # Added for error messages
 
 
@@ -230,8 +230,7 @@ class App(ctk.CTk):
             on_home=self.show_dashboard,
             on_bookmark=self.show_bookmark,
             on_comics=self.show_Comics,
-            on_profile=self.show_profile,
-            on_search=self.initiate_search_display
+            on_profile=self.show_profile
         )
         # self.topbar.grid(row=0, column=0, sticky="ew") # Do not grid initially
 
@@ -339,43 +338,6 @@ class App(ctk.CTk):
         self.administrator_page.update()
 
 
-    # Search_clicked METHOD (called by top bar search button)
-    def initiate_search_display(self, query=None, genre_filter=None, status_filter=None, order_filter=None):
-        """
-        Initiates a search with the given criteria and displays results on SearchPage.
-        Called by top bar search or dashboard filters.
-        """
-        self.title("Search Results")
-
-        if not query and not genre_filter and not status_filter and not order_filter:
-            print("No search criteria provided. Displaying empty/previous search results page.")
-            self.show_search_results(results=[], query="", genre_filter="", status_filter="", order_filter="")
-            return
-
-        results = search_mangas(
-            query=query,
-            genre_filter=genre_filter,
-            status_filter=status_filter,
-            order_filter=order_filter
-        )
-
-        print(f"DEBUG: initiate_search_display - Query: '{query}', Genre: '{genre_filter}', Status: '{status_filter}', Order: '{order_filter}'")
-        print(f"DEBUG: Search Results from search_mangas: {len(results)} found")
-
-        self.show_search_results(results, query, genre_filter, status_filter, order_filter)
-
-    def show_search_results(self, results, query=None, genre_filter=None, status_filter=None, order_filter=None):
-        self.show_topbar()
-        self.topbar.set_active_button(None)
-        self.search_results_page.display_results(
-            results,
-            query=query,
-            genre_filter=genre_filter,
-            status_filter=status_filter,
-            order_filter=order_filter
-        )
-        self.search_results_page.tkraise()
-        self.search_results_page.refresh_bookmark_states()
 
     def refresh_all_bookmark_related_uis(self):
         print("Refreshing all bookmark-related UIs...")
