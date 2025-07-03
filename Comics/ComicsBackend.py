@@ -3,61 +3,47 @@
 from datetime import datetime, timedelta
 from users_db import current_session
 from user_model import add_bookmark, remove_bookmark_db, get_bookmarks_by_email
+import sqlite3
 
-# === STATIC MANGA LIST (existing content) ===
-manga_list = [
-    {   "name": "Oshi no Ko", 
-        "chapter": 75,
-        "description": "A story about a doctor reincarnated as the son of a famous idol, uncovering the dark side of the entertainment industry.",
-        "author": "Akasaka Aka",
-        "genre": "Drama, Supernatural", 
-        "status": "Ongoing", "image": "image/oshi.webp"
-    },
+connection = sqlite3.connect('user.db')
+cursor = connection.cursor()
+cursor.execute("SELECT mangaId, title, latest, status, img_path, description, update_date FROM Manga")
 
-    {   "name": "Green Green Greens", 
-        "chapter": 26,
-        "description": "A golf-themed manga following the journey of a talented young golfer.", 
-        "author": "Kawata Yuuji",
-        "genre": "Sports, Drama", 
-        "status": "Ongoing",
-        "image": "image/greens.jfif"
-    },
+manga_rows = cursor.fetchall()
 
-    {   "name": "Wind Breaker",
-        "chapter": 460, 
-        "description": "Follows a high school student who joins a cycling team and discovers the world of competitive racing.", 
-        "author": "Jo Yongseok",
-        "genre": "Action, Sports",
-        "status": "Ongoing", "image": "image/braker.jfif"
-    },
-    {   "name": "Pokemon", 
-        "chapter": 150,    
-        "description": "Based on the popular video game, chronicling the adventures of trainers and their Pokémon.", 
-        "author": "Hidenori Kusaka",
-        "genre": "Adventure, Fantasy", 
-        "status": "Ongoing", "image": "image/pokemon.jfif"       
-    },
-]
+all_manga = [] # List to store all manga data
 
-# === DYNAMICALLY ADDED NEW MANGA LIST ===
-new_manga_list = [
-    #sample new manga entries
-   # {"name": "The Days of Diamond", "chapter": "85", "genre": "Sports, Drama","status": "Ongoing","image": "image/Ace.jpg","release_date": datetime.now(), "description": "A baseball manga focusing on the struggles and triumphs of a high school team aiming for the national championship.", "author": "Yuji Terajima"},
-]
+for rows in manga_rows:
+    manga_id, title, latest, status, img_path, description, update_date = rows
+    cursor.execute("SELECT genre FROM Genres WHERE mangaId = ?", (manga_id,))
+    genres = [g[0] for g in cursor.fetchall()]  # Fetching genres for each manga
+    genre_str = ', '.join(genres)  # Combining genres into a single string
+
+    all_manga.append({
+        "mangaId": manga_id,
+        "name": title,
+        "chapter": latest,
+        "genre": genre_str,
+        "status": status,
+        "image": img_path,
+        "summary": description,
+        "update_date": update_date
+    })
+
 
 # === Returns static manga list ===
 def get_manga_list():
-    return manga_list
+    return all_manga
 
 # === Returns new manga list added via add_manga ===
 def get_new_manga_list():
-    return new_manga_list
+    return all_manga
 
 # === Combine both static and new manga into one ===
 def get_all_manga():
     """Returns all manga from both lists."""
-    return manga_list + new_manga_list
-
+    return all_manga
+"""
 # === Adds a new manga into new_manga_list with release date ===
 def add_manga(manga_details):
     all_current_mangas = [m.get("name") for m in manga_list] + [m.get("name") for m in new_manga_list]
@@ -77,7 +63,7 @@ def get_new_releases_backend(days_ago=30, limit=None):
     ]
     new_releases.sort(key=lambda x: x.get("release_date", datetime.min), reverse=True)
     return new_releases[:limit] if limit else new_releases
-
+"""
 # === Bookmarks a manga for the currently logged-in user ===
 def bookmark_manga_admin(manga_to_bookmark):
     email = current_session.get("email")

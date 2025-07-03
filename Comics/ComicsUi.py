@@ -42,7 +42,7 @@ class ComicsPage(ctk.CTkFrame):
 
         # === Main Section Title ===
         self.title_label = ctk.CTkLabel(
-            self.content_scrollable_frame, text="Ready for the next chapter",
+            self.content_scrollable_frame, text="ALL MANGAS",
             font=ctk.CTkFont(size=24, weight="bold"), anchor="w"
         )
         self.title_label.pack(pady=(0, 10), anchor="w", fill="x")
