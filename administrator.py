@@ -143,7 +143,7 @@ class AdminPage(ctk.CTkScrollableFrame):
         self.update_container = ctk.CTkFrame(self.content, fg_color="#1a1a1a", corner_radius=10)
         self.update_container.grid(row=16, column=0, pady=(0, 20), padx=10, sticky="ew")
         self.update_container.grid_columnconfigure(0, weight=1)
-
+        
 
         # Manga List Label
         ctk.CTkLabel(self.update_container, text="Manga List:", anchor="w",
@@ -152,29 +152,28 @@ class AdminPage(ctk.CTkScrollableFrame):
         #    DITO YUNG DROP DOWN NA KAILANGAN MO LAGYAN NG LAMAN YUNG TITLE  + name kung dimo pa nababago yung MGA MANGA NATIN
         #=====================================================================================================================
         # Manga List Dropdown (empty for now)
+                # Manga List Dropdown (empty for now)
         self.manga_list_dropdown = ctk.CTkOptionMenu(self.update_container,
                                                     values=["lagyan moto ng parameter na makikita ang laman ng manga sa database"],  # Empty list
                                                     fg_color="#39ff14", text_color="black", button_color="#28c20e")
         self.manga_list_dropdown.set("Select Manga")
         self.manga_list_dropdown.grid(row=1, column=0, sticky="ew", padx=10, pady=5)
 
-        # Chapter Number Label
+        # Status Label and Dropdown (row 2 and 3)
+        ctk.CTkLabel(self.update_container, text="Status:", anchor="w", font=ctk.CTkFont(size=16, weight="bold")).grid(row=2, column=0, sticky="ew", padx=10)
+        self.update_status = ctk.CTkOptionMenu(self.update_container,
+                                               values=["Ongoing", "Completed", "Hiatus"],
+                                               fg_color="#39ff14", text_color="black", button_color="#28c20e")
+        self.update_status.set("Select Status")
+        self.update_status.grid(row=3, column=0, sticky="ew", padx=10, pady=5)
+
+        # Chapter Number Label and Entry (row 4 and 5)
         ctk.CTkLabel(self.update_container, text="Chapter Number:", anchor="w",
-                    font=ctk.CTkFont(size=16, weight="bold")).grid(row=2, column=0, sticky="ew", padx=10, pady=(10, 0))
-
-        # Chapter Number Entry
+                    font=ctk.CTkFont(size=16, weight="bold")).grid(row=4, column=0, sticky="ew", padx=10, pady=(10, 0))
         self.chapter_number_entry = ctk.CTkEntry(self.update_container, placeholder_text="Enter chapter number")
-        self.chapter_number_entry.grid(row=3, column=0, sticky="ew", padx=10, pady=5)
+        self.chapter_number_entry.grid(row=5, column=0, sticky="ew", padx=10, pady=5)
 
-        # Chapter Description Label
-        ctk.CTkLabel(self.update_container, text="Chapter Description:", anchor="w",
-                    font=ctk.CTkFont(size=16, weight="bold")).grid(row=4, column=0, sticky="ew", padx=10)
-
-        # Chapter Description Textbox
-        self.chapter_desc = ctk.CTkTextbox(self.update_container, height=100)
-        self.chapter_desc.grid(row=5, column=0, sticky="ew", padx=10, pady=5)
-
-        # Update Button
+        # Update Button (row 6)
         ctk.CTkButton(self.update_container, text="Update Chapter", command=self.update_chapter,
                     fg_color="#39ff14", hover_color="#1f8112", text_color="black").grid(row=6, column=0, pady=(5, 10), padx=10, sticky="ew")
 
@@ -189,18 +188,15 @@ class AdminPage(ctk.CTkScrollableFrame):
     # Update Chapter Logic dito yung logic ng update dipa connected sa db
     def update_chapter(self):
         chapter_num = self.chapter_number_entry.get()
-        chapter_desc = self.chapter_desc.get("1.0", "end").strip()
-        if not chapter_num or not chapter_desc:
-            messagebox.showerror("Error", "Please fill out all chapter fields.")
+        if not chapter_num:
+            messagebox.showerror("Error", "Please fill out the chapter number.")
             return
-        print(f"Chapter {chapter_num} updated with description:\n{chapter_desc}")
+        print(f"Chapter {chapter_num} updated!")
         messagebox.showinfo("Success", f"Chapter {chapter_num} updated successfully!")
         self.chapter_number_entry.delete(0, "end")
-        self.chapter_desc.delete("1.0", "end")
-        self.manga_list_dropdown.set("Select Manga")             # Clear dropdown
-        self.chapter_number_entry.delete(0, "end")               # Clear chapter number entry
-        self.chapter_desc.delete("1.0", "end")
-
+        self.manga_list_dropdown.set("Select Manga")
+        self.update_status.set("Select Status")
+            
     #dito yung mag upload ng image============
     def load_profile_image(self):
         user_info = get_user_prof()
@@ -288,3 +284,15 @@ class AdminPage(ctk.CTkScrollableFrame):
         else:
             # Fallback if controller is not set (e.g., if AdminPage is run standalone, which it shouldn't be now)
             self.master.destroy()
+        
+
+#temporary runner for testing the AdminPage
+if __name__ == "__main__":
+    import customtkinter as ctk
+
+    root = ctk.CTk()
+    root.title("Admin Page Test")
+    root.geometry("1100x800")
+    admin_page = AdminPage(root)
+    admin_page.pack(fill="both", expand=True)
+    root.mainloop()
