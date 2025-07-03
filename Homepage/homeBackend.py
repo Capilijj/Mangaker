@@ -19,7 +19,7 @@ manga_rows = cursor.fetchall()
 mangas = [] # list to store manga data 
 
 for row in manga_rows:
-    manga_id, title, author, latest, status, img_path, description = row # unpacking tuple manga data
+    manga_id, title, author, latest, status, img_path, description, update_date = row # unpacking tuple manga data
     cursor.execute("SELECT genre FROM Genres WHERE mangaId = ?", (manga_id,))
     genres = [g[0] for g in cursor.fetchall()] # fetching genres for each manga
     genre_str = ', '.join(genres) # combining genres into a single string
@@ -74,7 +74,7 @@ def get_completed_manga():
 
     for row in manga_rows:
         if i < 5:  # Limit to 5 completed manga
-            manga_id, title, author, latest, status, img_path, description = row
+            manga_id, title, author, latest, status, img_path, description, update_date = row
 
             cursor.execute("SELECT genre FROM Genres WHERE mangaId = ?", (manga_id,))
             genres = [g[0] for g in cursor.fetchall()] 
@@ -138,6 +138,8 @@ def get_latest_update():
     
     connection.close()
     
+    return latest_updates
+
 # ==== Get logged-in user profile ====
 def get_user_prof():
     email = current_session.get("email")

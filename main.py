@@ -18,6 +18,7 @@ import os
 from user_model import init_user_db, authenticate_user, get_current_user_role, clear_current_user # Added authenticate_user, get_current_user_role, clear_current_user
 from tkinter import messagebox # Added for error messages
 
+
 # =========================================================================================
 #                          Function to make the image Circle
 # =========================================================================================

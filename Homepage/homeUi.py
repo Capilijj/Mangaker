@@ -369,13 +369,13 @@ class MangaListSection(ctk.CTkFrame):
         img_label.grid(row=0, column=0, rowspan=7, padx=10, pady=10, sticky="ns") # Increased rowspan
 
         # Rearranged and added description and author
-        name_label = ctk.CTkLabel(container, text=manga.get("name", "N/A"), font=ctk.CTkFont(size=16, weight="bold"), anchor="w")
+        name_label = ctk.CTkLabel(container, text=manga.get("title", "N/A"), font=ctk.CTkFont(size=16, weight="bold"), anchor="w")
         name_label.grid(row=0, column=1, sticky="sw", pady=(10, 0), padx=5)
 
         chapter_label = ctk.CTkLabel(container, text=f"Chapter {manga.get('chapter', 'N/A')}", font=ctk.CTkFont(size=14), anchor="w")
         chapter_label.grid(row=1, column=1, sticky="nw", padx=5)
 
-        desc_label = ctk.CTkLabel(container, text=f"Desc: {manga.get('desc', 'N/A')}", font=ctk.CTkFont(size=12), wraplength=200, justify="left", anchor="w") # Adjust wraplength
+        desc_label = ctk.CTkLabel(container, text=f"Desc: {manga.get('summary', 'N/A')}", font=ctk.CTkFont(size=12), wraplength=200, justify="left", anchor="w") # Adjust wraplength
         desc_label.grid(row=2, column=1, sticky="nw", padx=5)
 
         author_label = ctk.CTkLabel(container, text=f"Author: {manga.get('author', 'N/A')}", font=ctk.CTkFont(size=12), anchor="w")
