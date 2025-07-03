@@ -3,6 +3,7 @@ from tkinter import messagebox, filedialog
 from PIL import Image, ImageDraw
 import os
 from user_model import get_user_prof, get_current_username, clear_current_user
+import sqlite3
 
 # Re-define make_circle here just in case, though it's also in main.py
 # If you prefer a single source, you could import it, but having it local
@@ -151,10 +152,9 @@ class AdminPage(ctk.CTkScrollableFrame):
         #=====================================================================================================================
         #    DITO YUNG DROP DOWN NA KAILANGAN MO LAGYAN NG LAMAN YUNG TITLE  + name kung dimo pa nababago yung MGA MANGA NATIN
         #=====================================================================================================================
-        # Manga List Dropdown (empty for now)
-                # Manga List Dropdown (empty for now)
+        # Manga List Dropdown
         self.manga_list_dropdown = ctk.CTkOptionMenu(self.update_container,
-                                                    values=["lagyan moto ng parameter na makikita ang laman ng manga sa database"],  # Empty list
+                                                    values= self.manga_titles(),  # Display all manga titles
                                                     fg_color="#39ff14", text_color="black", button_color="#28c20e")
         self.manga_list_dropdown.set("Select Manga")
         self.manga_list_dropdown.grid(row=1, column=0, sticky="ew", padx=10, pady=5)
@@ -196,7 +196,16 @@ class AdminPage(ctk.CTkScrollableFrame):
         self.chapter_number_entry.delete(0, "end")
         self.manga_list_dropdown.set("Select Manga")
         self.update_status.set("Select Status")
-            
+
+    def manga_titles(self):
+        # Connect to the database and fetch manga titles
+        connection = sqlite3.connect('user.db')
+        cursor = connection.cursor()
+        cursor.execute("SELECT title FROM Manga ORDER BY title ASC") # fetching titles in alphabetical order
+        titles = [row[0] for row in cursor.fetchall()]
+        connection.close()
+        return titles if titles else ["No Manga Found"]
+
     #dito yung mag upload ng image============
     def load_profile_image(self):
         user_info = get_user_prof()
@@ -242,26 +251,61 @@ class AdminPage(ctk.CTkScrollableFrame):
     def load_user_requests(self):
         for widget in self.user_scroll.winfo_children():
             widget.destroy()
-        requests = [
-            "Add Naruto", "Bug in One Piece", "More romance", "Upload Berserk",
-            "Fix My Hero", "Update Bleach", "Add Tokyo Ghoul"
-        ]
+
+
+        # Connect to the database and fetch user requests
+        connection = sqlite3.connect('user.db')
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM Requests")
+
+        requests_rows = cursor.fetchall()
+        connection.close()
+
+        requests = [] # List to hold request texts
+
+        # storing all request text to requests list
+        for rows in requests_rows:
+            request_text = rows[2]
+            requests.append(request_text)
+
+        # displaying requests in the scrollable frame
         for idx, req in enumerate(requests):
             ctk.CTkLabel(self.user_scroll, text=req, anchor="w", wraplength=170).grid(row=idx, column=0, sticky="w", padx=5, pady=2)
     #=================================================================================================================
     #Dito yung logic ng submit ng manga may printing nadin sa terminal overall wala patong function na maupdate ang database
     def submit_manga(self):
+            # Collecting data from the form to store in db
         title = self.manga_title.get()
         genres = [g for g, v in self.genre_vars.items() if v.get()]
         status = self.status.get()
         author = self.author_entry.get()
         desc = self.description.get("1.0", "end").strip()
+        img_path = getattr(self, 'current_image_path', None) # get the path of uploaded image
+
         if not title or not genres or status == "Select Status" or not author or not desc:
             messagebox.showerror("Error", "Please complete all fields.")
             return
-        print(f"Submitted: {title} | {genres} | {status} | {author} | {desc}")
-        messagebox.showinfo("Success", "Manga submitted!")
-        self.clear_fields()
+            
+        try:
+            connection = sqlite3.connect('user.db')
+            cursor = connection.cursor()
+            cursor.execute("""
+                INSERT INTO Manga (title, author, latest, status, img_path, description, update_date)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                """, (title, author, 1, status, img_path, desc))
+            
+            manga_id = cursor.lastrowid  # Get the ID of the newly inserted manga
+
+            for genre in genres:
+                cursor.execute("INSERT INTO Genres (manga_id, genre) VALUES (?, ?)", (manga_id, genre))
+
+            connection.commit()
+            connection.close()
+            messagebox.showinfo("Success", "Manga submitted!")
+            self.clear_fields()
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to submit manga: {e}")
     #=================================================================================================================
     #hindi na cleclear yung image awit hayaan nalang siguro nag try ako ng ibang way ayaw padin eh try mo
     def clear_fields(self):
