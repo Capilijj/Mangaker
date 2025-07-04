@@ -314,8 +314,6 @@ class AdminPage(ctk.CTkScrollableFrame):
             request_text = rows[2]
             requests.append(request_text)
 
-        print(requests)  # Debug print to see the requests fetched
-
         # displaying requests in the scrollable frame
         for idx, req in enumerate(requests):
             ctk.CTkLabel(self.user_scroll, text=req, anchor="w", wraplength=170).grid(row=idx, column=0, sticky="w", padx=5, pady=2)
