@@ -283,7 +283,7 @@ class MangaListSection(ctk.CTkFrame):
 
             # Check initial bookmark status for each manga
             bookmarked_mangas = get_bookmarked_mangas()
-            is_bookmarked = any(bm.get("name") == manga.get("name") for bm in bookmarked_mangas)
+            is_bookmarked = any(bm.get("title") == manga.get("title") for bm in bookmarked_mangas)
 
             bm_btn = ctk.CTkButton(container, text="BOOKMARK", width=120,
                                    image=bookmark_filled if is_bookmarked else bookmark_empty, # Set initial image
@@ -294,7 +294,7 @@ class MangaListSection(ctk.CTkFrame):
 
     def toggle_bookmark_list_item(self, btn, manga):
         bookmarked_mangas = get_bookmarked_mangas()
-        is_bookmarked = any(bm.get("name") == manga.get("name") for bm in bookmarked_mangas)
+        is_bookmarked = any(bm.get("title") == manga.get("title") for bm in bookmarked_mangas)
 
         bookmark_empty = CTkImage(light_image=Image.open("image/bookempty.png"), size=(24, 24))
         bookmark_filled = CTkImage(light_image=Image.open("image/bookfilled.png"), size=(24, 24))
@@ -302,11 +302,11 @@ class MangaListSection(ctk.CTkFrame):
         if is_bookmarked:
             remove_bookmark(manga)
             btn.configure(image=bookmark_empty)
-            print(f"❌ Un-bookmarked: {manga.get('name', 'N/A')}")
+        
         else:
             bookmark_manga(manga)
             btn.configure(image=bookmark_filled)
-            print(f"✅ Bookmarked: {manga.get('name', 'N/A')}")
+    
 
     #=========================================
     #           Latest update manga
@@ -391,7 +391,7 @@ class MangaListSection(ctk.CTkFrame):
 
         # Check initial bookmark status for each manga
         bookmarked_mangas = get_bookmarked_mangas()
-        is_bookmarked = any(bm.get("name") == manga.get("name") for bm in bookmarked_mangas)
+        is_bookmarked = any(bm.get("title") == manga.get("title") for bm in bookmarked_mangas)
 
         bookmark_btn = ctk.CTkButton(
             container,

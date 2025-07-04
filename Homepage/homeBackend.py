@@ -244,9 +244,4 @@ def get_bookmarked_mangas():
 
     return resolved_bookmarks
 
-# ==== Clear all bookmarks for current user ====
-def remove_all_bookmarks():
-    email = current_session.get("email")
-    if not email:
-        return False, "No user logged in."
-    return clear_bookmarks(email)
+
