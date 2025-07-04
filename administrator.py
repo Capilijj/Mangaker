@@ -6,6 +6,7 @@ from user_model import get_user_prof, get_current_username, clear_current_user
 import sqlite3
 from datetime import datetime, timedelta
 import shutil
+from datetime import datetime, timedelta
 
 # Re-define make_circle here just in case, though it's also in main.py
 # If you prefer a single source, you could import it, but having it local
@@ -62,7 +63,9 @@ class AdminPage(ctk.CTkScrollableFrame):
         self.user_scroll = ctk.CTkScrollableFrame(self.sidebar, width=200, height=400)
         self.user_scroll.grid(row=5, column=0, pady=10, padx=10, sticky="nsew")
         self.sidebar.grid_rowconfigure(5, weight=1)
+
         self.load_user_requests() # showing all user requests on the sidebar
+        self.auto_refresh_requests()
 
         self.content = ctk.CTkFrame(self, fg_color="transparent")
         self.content.grid(row=1, column=1, sticky="nsew", padx=(5, 10), pady=(0, 10))
@@ -193,40 +196,39 @@ class AdminPage(ctk.CTkScrollableFrame):
         chapter_num = self.chapter_number_entry.get()
         status = self.update_status.get()
 
-        # validation if the fields are not filled out properly
+        # validation...
         if manga_title == "Select Manga":
             messagebox.showerror("Error", "Please select a manga from the list.")
             return
-
         if status == "Select Status":
             messagebox.showerror("Error", "Please select a status.")
             return
-
         if not chapter_num:
             messagebox.showerror("Error", "Please fill out the chapter number.")
             return
-        
+
+        # Set timezone to UTC+8 for update_date
+        ph_time = datetime.utcnow() + timedelta(hours=8)
+        ph_timestamp = ph_time.strftime('%Y-%m-%d %H:%M:%S')
+
         # Updating the manga details in the database
         connection = sqlite3.connect('user.db')
         cursor = connection.cursor()
         cursor.execute(""" 
             UPDATE Manga
-            SET latest = ?, status = ?
+            SET latest = ?, status = ?, update_date = ?
             WHERE title = ?
-                       """, (chapter_num, status, manga_title))
-        
+        """, (chapter_num, status, ph_timestamp, manga_title))
         connection.commit()
         connection.close()
 
         messagebox.showinfo("Success", f"Chapter {chapter_num} updated successfully!")
 
-
-
         # resetting the fields after update
         self.chapter_number_entry.delete(0, "end")
         self.manga_list_dropdown.set("Select Manga")
         self.update_status.set("Select Status")
-
+        
     def manga_titles(self):
         # Connect to the database and fetch manga titles
         connection = sqlite3.connect('user.db')
@@ -264,7 +266,7 @@ class AdminPage(ctk.CTkScrollableFrame):
 
     #logic ng photo ====================================================================================
     def upload_photo(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
+        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg *.webp *.jfif")])
         if file_path:
             save_dir = "image"
 
@@ -293,32 +295,51 @@ class AdminPage(ctk.CTkScrollableFrame):
     #=================================================================================================================
     #dito boi dito mag didisplay ang manga request dito mo iconnect yung sa database ito yung ui para sa request
     # alisin mo nalang yang mga sample request
-
+    def auto_refresh_requests(self):
+        self.load_user_requests()
+        self.after(5000, self.auto_refresh_requests)  # refresh every 5 seconds
+        
     def load_user_requests(self):
         for widget in self.user_scroll.winfo_children():
             widget.destroy()
 
-
         # Connect to the database and fetch user requests
         connection = sqlite3.connect('user.db')
         cursor = connection.cursor()
-        cursor.execute("SELECT * FROM Requests")
-
+        cursor.execute("SELECT requestId, request_title FROM Requests")
         requests_rows = cursor.fetchall()
         connection.close()
 
-        requests = [] # List to hold request texts
-
-        # storing all request text to requests list
-        for rows in requests_rows:
-            request_text = rows[2]
-            requests.append(request_text)
-
-        print(requests)  # Debug print to see the requests fetched
-
         # displaying requests in the scrollable frame
-        for idx, req in enumerate(requests):
-            ctk.CTkLabel(self.user_scroll, text=req, anchor="w", wraplength=170).grid(row=idx, column=0, sticky="w", padx=5, pady=2)
+        for idx, (req_id, req_text) in enumerate(requests_rows):
+            req_frame = ctk.CTkFrame(self.user_scroll, fg_color="transparent")
+            req_frame.grid(row=idx, column=0, sticky="ew", padx=5, pady=2)
+            req_frame.grid_columnconfigure(0, weight=1)  # label column expands
+            req_frame.grid_columnconfigure(1, weight=0)  # button column stays right
+
+            req_label = ctk.CTkLabel(req_frame, text=req_text, anchor="center", wraplength=120, justify="center")
+            req_label.grid(row=0, column=0, sticky="ew", padx=(0, 10))
+
+            remove_btn = ctk.CTkButton(
+                req_frame,
+                text="Remove",
+                fg_color="red",
+                hover_color="#cc0000",
+                text_color="white",
+                width=60,
+                command=lambda rid=req_id: self.remove_user_request(rid)
+            )
+            remove_btn.grid(row=0, column=1, padx=(10, 0), sticky="e")
+
+    def remove_user_request(self, req_id):
+        # Remove the request from the database
+        connection = sqlite3.connect('user.db')
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM Requests WHERE requestId = ?", (req_id,))
+        connection.commit()
+        connection.close()
+        # Refresh the requests list
+        self.load_user_requests()
     #=================================================================================================================
     #Dito yung logic ng submit ng manga may printing nadin sa terminal overall wala patong function na maupdate ang database
     def submit_manga(self):

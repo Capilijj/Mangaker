@@ -164,7 +164,6 @@ class MangaViewer(ctk.CTkFrame):
         self.is_bookmarked = any(bm.get("title") == manga.get("title") for bm in bookmarked_mangas)
         self.bm_button.configure(image=self.bookmark_filled if self.is_bookmarked else self.bookmark_empty)
 
-
         for i, btn in enumerate(self.circle_buttons):
             btn.configure(fg_color="#1f6aa5" if i == index else "#555")
 
@@ -218,6 +217,7 @@ class MangaListSection(ctk.CTkFrame):
         self.show_manga_list_callback = show_manga_list_callback
 
         self.refresh_bookmark_buttons() # Initial call to create sections and set buttons
+        
     #=========================================
     #           Completed manga
     #========================================
@@ -230,27 +230,22 @@ class MangaListSection(ctk.CTkFrame):
         completed_frame.grid(row=1, column=0, pady=(10, 30), sticky="ew")
 
         # Configure columns in completed_frame to expand equally
-        # This will ensure items spread out evenly
         for i in range(len(self.completed_manga)):
             completed_frame.grid_columnconfigure(i, weight=1)
 
-        # Fixed size for each manga container in completed section
-        ITEM_WIDTH = 200 # Increased width for more space
-        ITEM_HEIGHT = 400 # Adjusted height to accommodate all fields and button
+        ITEM_WIDTH = 200
+        ITEM_HEIGHT = 400
 
         for idx, manga in enumerate(self.completed_manga):
             container = ctk.CTkFrame(completed_frame, corner_radius=8, fg_color="#222222", width=ITEM_WIDTH, height=ITEM_HEIGHT)
-            container.grid(row=0, column=idx, padx=10, sticky="ns") # Use sticky="ns" to ensure vertical filling
-            container.pack_propagate(False) # Prevent frame from shrinking to fit content
+            container.grid(row=0, column=idx, padx=10, sticky="ns")
+            container.pack_propagate(False)
 
-            # Configure column for content within each manga container
             container.grid_columnconfigure(0, weight=1)
-            # Configure row 6 to expand and push row 7 (bookmark button) to the bottom
             container.grid_rowconfigure(6, weight=1)
 
             try:
-                # Reverted: Use "image" as the key for completed manga images
-                img = Image.open(manga.get("image", "")).resize((120, 180)) # Maintain image size
+                img = Image.open(manga.get("image", "")).resize((120, 180))
                 photo = CTkImage(light_image=img, size=(120, 180))
             except Exception:
                 photo = None
@@ -259,7 +254,6 @@ class MangaListSection(ctk.CTkFrame):
             img_label.image = photo
             img_label.grid(row=0, column=0, pady=(10, 5))
 
-            # Rearranged and added description and author
             name_label = ctk.CTkLabel(container, text=manga.get("title", "N/A"), font=ctk.CTkFont(size=16, weight="bold"), wraplength=ITEM_WIDTH-20, justify="center")
             name_label.grid(row=1, column=0, pady=(0, 2))
 
@@ -281,16 +275,15 @@ class MangaListSection(ctk.CTkFrame):
             bookmark_empty = CTkImage(light_image=Image.open("image/bookempty.png"), size=(24, 24))
             bookmark_filled = CTkImage(light_image=Image.open("image/bookfilled.png"), size=(24, 24))
 
-            # Check initial bookmark status for each manga
             bookmarked_mangas = get_bookmarked_mangas()
             is_bookmarked = any(bm.get("title") == manga.get("title") for bm in bookmarked_mangas)
 
             bm_btn = ctk.CTkButton(container, text="BOOKMARK", width=120,
-                                   image=bookmark_filled if is_bookmarked else bookmark_empty, # Set initial image
+                                   image=bookmark_filled if is_bookmarked else bookmark_empty,
                                    text_color="black", font=ctk.CTkFont(size=14, weight="bold"),
                                    fg_color="#0dfa21", hover_color="#167e03")
             bm_btn.configure(command=lambda btn=bm_btn, m=manga: self.toggle_bookmark_list_item(btn, m))
-            bm_btn.grid(row=7, column=0, pady=(5, 10)) # Placed in grid
+            bm_btn.grid(row=7, column=0, pady=(5, 10))
 
     def toggle_bookmark_list_item(self, btn, manga):
         bookmarked_mangas = get_bookmarked_mangas()
@@ -302,11 +295,9 @@ class MangaListSection(ctk.CTkFrame):
         if is_bookmarked:
             remove_bookmark(manga)
             btn.configure(image=bookmark_empty)
-        
         else:
             bookmark_manga(manga)
             btn.configure(image=bookmark_filled)
-    
 
     #=========================================
     #           Latest update manga
@@ -317,9 +308,21 @@ class MangaListSection(ctk.CTkFrame):
         header_frame.grid(row=2, column=0, sticky="ew", pady=(0, 10))
         header_frame.grid_columnconfigure(0, weight=1)
         header_frame.grid_columnconfigure(1, weight=0)
+        header_frame.grid_columnconfigure(2, weight=0)  # For refresh button
 
         label = ctk.CTkLabel(header_frame, text="LATEST UPDATE", font=ctk.CTkFont(size=20, weight="bold"))
         label.grid(row=0, column=0, sticky="w")
+
+        refresh_btn = ctk.CTkButton(
+            header_frame,
+            text="Refresh",
+            width=80,
+            fg_color="#0dfa21",
+            hover_color="#167e03",
+            text_color="black",
+            command=self.refresh_sections
+        )
+        refresh_btn.grid(row=0, column=1, sticky="e", padx=(10, 5))
 
         view_all_btn = ctk.CTkButton(
             header_frame,
@@ -330,12 +333,14 @@ class MangaListSection(ctk.CTkFrame):
             text_color="black",
             command=self.show_manga_list_callback
         )
-        view_all_btn.grid(row=0, column=1, sticky="e")
+        view_all_btn.grid(row=0, column=2, sticky="e")
+
+
+        # ------------------------------
 
         latest_frame = ctk.CTkFrame(self.main_container)
         latest_frame.grid(row=3, column=0, sticky="ew")
 
-        # Configure columns to expand equally
         for i in range(3):
             latest_frame.grid_columnconfigure(i, weight=1)
 
@@ -344,37 +349,31 @@ class MangaListSection(ctk.CTkFrame):
             c = idx % 3
             self.create_latest_manga_container(latest_frame, manga, row=r, column=c)
 
-
     def create_latest_manga_container(self, parent, manga, row, column):
-        container = ctk.CTkFrame(parent, height=200, corner_radius=8, fg_color="#222222") # Adjusted height
+        container = ctk.CTkFrame(parent, height=200, corner_radius=8, fg_color="#222222")
         container.grid(row=row, column=column, padx=10, pady=10, sticky="nsew")
 
         container.grid_columnconfigure(1, weight=1)
-        # Increased row count to accommodate all fields and button
         container.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=0)
-        # Add weight to the status row to push the bookmark button down
         container.grid_rowconfigure(5, weight=1)
 
-
         try:
-            # Reverted: Use "image" as the key for latest updates manga images
-            img = Image.open(manga.get("image", "")).resize((100, 150)) # Slightly smaller image for latest updates
+            img = Image.open(manga.get("image", "")).resize((100, 150))
             photo = CTkImage(light_image=img, size=(100, 150))
         except Exception:
             photo = None
 
         img_label = ctk.CTkLabel(container, image=photo, text="")
         img_label.image = photo
-        img_label.grid(row=0, column=0, rowspan=7, padx=10, pady=10, sticky="ns") # Increased rowspan
+        img_label.grid(row=0, column=0, rowspan=7, padx=10, pady=10, sticky="ns")
 
-        # Rearranged and added description and author
         name_label = ctk.CTkLabel(container, text=manga.get("title", "N/A"), font=ctk.CTkFont(size=16, weight="bold"), anchor="w")
         name_label.grid(row=0, column=1, sticky="sw", pady=(10, 0), padx=5)
 
         chapter_label = ctk.CTkLabel(container, text=f"Chapter {manga.get('chapter', 'N/A')}", font=ctk.CTkFont(size=14), anchor="w")
         chapter_label.grid(row=1, column=1, sticky="nw", padx=5)
 
-        desc_label = ctk.CTkLabel(container, text=f"Desc: {manga.get('summary', 'N/A')}", font=ctk.CTkFont(size=12), wraplength=200, justify="left", anchor="w") # Adjust wraplength
+        desc_label = ctk.CTkLabel(container, text=f"Desc: {manga.get('summary', 'N/A')}", font=ctk.CTkFont(size=12), wraplength=200, justify="left", anchor="w")
         desc_label.grid(row=2, column=1, sticky="nw", padx=5)
 
         author_label = ctk.CTkLabel(container, text=f"Author: {manga.get('author', 'N/A')}", font=ctk.CTkFont(size=12), anchor="w")
@@ -389,7 +388,6 @@ class MangaListSection(ctk.CTkFrame):
         bookmark_empty = CTkImage(light_image=Image.open("image/bookempty.png"), size=(24, 24))
         bookmark_filled = CTkImage(light_image=Image.open("image/bookfilled.png"), size=(24, 24))
 
-        # Check initial bookmark status for each manga
         bookmarked_mangas = get_bookmarked_mangas()
         is_bookmarked = any(bm.get("title") == manga.get("title") for bm in bookmarked_mangas)
 
@@ -400,21 +398,23 @@ class MangaListSection(ctk.CTkFrame):
             fg_color="#0dfa21",
             hover_color="#167e03",
             text_color="black",
-            image=bookmark_filled if is_bookmarked else bookmark_empty, # Set initial image
+            image=bookmark_filled if is_bookmarked else bookmark_empty,
             font=ctk.CTkFont(family="Poppins", size=14, weight="bold")
         )
-        # Modified line: Place bookmark button in column 1 (text column) below status
         bookmark_btn.grid(row=6, column=1, padx=5, pady=(5, 10), sticky="nw")
         bookmark_btn.configure(command=lambda b=bookmark_btn, m=manga: self.toggle_bookmark_list_item(b, m))
 
     # New method to refresh the bookmark buttons on the completed and latest sections
     def refresh_bookmark_buttons(self):
-        # Clear existing sections
         for widget in self.main_container.winfo_children():
             widget.destroy()
-        # Re-create sections to update bookmark states
         self.create_completed_section()
         self.create_latest_update_section()
+
+    def refresh_sections(self):
+        self.completed_manga = get_completed_manga()
+        self.latest_update = get_latest_update()
+        self.refresh_bookmark_buttons()
 
 #==========================================================================================
 #           DashboardPage class to manage the main dashboard UI
@@ -424,29 +424,22 @@ class DashboardPage(ctk.CTkFrame):
         super().__init__(parent)
         self.controller = controller
 
-        # ========== MAIN CONTENT AREA WITH SCROLLABLE FRAME ============
         self.content_container = ctk.CTkScrollableFrame(self, fg_color="transparent")
         self.content_container.pack(fill="both", expand=True)
 
-        self.manga_viewer = MangaViewer(self.content_container, controller=self.controller) # Pass controller here
+        self.manga_viewer = MangaViewer(self.content_container, controller=self.controller)
         self.manga_viewer.pack(fill="both", expand=True)
 
-        # Updated to call show_admin directly or ensure show_manga_list calls show_admin
         self.mangalist_section = MangaListSection(self.content_container, show_manga_list_callback=self.controller.show_Comics)
-        self.mangalist_section.controller = self.controller # Pass controller to MangaListSection
+        self.mangalist_section.controller = self.controller
         self.mangalist_section.pack(fill="x", expand=False, pady=10)
 
         self.home_action()
-
-    # =============================================
-    # ========== BUTTON ACTION FUNCTIONS ==========
-    # =============================================
 
     def home_action(self):
         self.content_container.pack(fill="both", expand=True)
         self.controller.title("Dashboard")
 
-    # New method to refresh bookmark states for all relevant sections
     def refresh_all_bookmark_states(self):
-        self.manga_viewer.load_manga(self.manga_viewer.current_index) # Refresh current manga viewer state
-        self.mangalist_section.refresh_bookmark_buttons() # Refresh all buttons in lists
+        self.manga_viewer.load_manga(self.manga_viewer.current_index)
+        self.mangalist_section.refresh_bookmark_buttons()

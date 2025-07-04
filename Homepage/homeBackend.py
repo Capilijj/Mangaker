@@ -10,41 +10,34 @@ from Comics.ComicsBackend import get_manga_list, new_manga_list, get_new_release
 
 
 # ==== Fetching Manga from the Database ==== 
-connection = sqlite3.connect('user.db')
-cursor = connection.cursor()
-
-cursor.execute("SELECT * FROM Manga") # fetching all manga from db
-manga_rows = cursor.fetchall()
-
-mangas = [] # list to store manga data 
-
-for row in manga_rows:
-    manga_id, title, author, latest, status, img_path, description, update_date = row # unpacking tuple manga data
-    cursor.execute("SELECT genre FROM Genres WHERE mangaId = ?", (manga_id,))
-    genres = [g[0] for g in cursor.fetchall()] # fetching genres for each manga
-    genre_str = ', '.join(genres) # combining genres into a single string
-
-    mangas.append({
-        "mangaId": manga_id,
-        "title": title,
-        "author": author,
-        "chapter": latest,
-        "genre": genre_str, 
-        "status": status,
-        "image": img_path,
-        "summary": description,
-    }) # appending manga data to the list as dictionary
-
-connection.close()
-
-# ==== Fetch basic manga list ====
 def get_mangas():
+    connection = sqlite3.connect('user.db')
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM Manga")
+    manga_rows = cursor.fetchall()
+    mangas = []
+    for row in manga_rows:
+        manga_id, title, author, latest, status, img_path, description, update_date = row
+        cursor.execute("SELECT genre FROM Genres WHERE mangaId = ?", (manga_id,))
+        genres = [g[0] for g in cursor.fetchall()]
+        genre_str = ', '.join(genres)
+        mangas.append({
+            "mangaId": manga_id,
+            "title": title,
+            "author": author,
+            "chapter": latest,
+            "genre": genre_str,
+            "status": status,
+            "image": img_path,
+            "summary": description,
+        })
+    connection.close()
     return mangas
 
 def get_display_manga():
     display_manga = [] # List to store manga data for display
     i = 0 # counter for manga display
-    for manga in mangas:
+    for manga in get_mangas():
         if i < 10: # Limit to 10 manga for display
             display_manga.append({
                 "title": manga["title"],
@@ -219,7 +212,7 @@ def get_bookmarked_mangas():
 
     # Combine manga from all potential sources
     all_manga = []
-    all_manga.extend(mangas)  # From local static list
+    all_manga.extend(get_mangas())  # From local static list
     all_manga.extend(get_completed_manga())
     all_manga.extend(get_latest_update())
     all_manga.extend(get_manga_list())  # Admin backend
