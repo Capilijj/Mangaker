@@ -50,16 +50,22 @@ class SearchPage(ctk.CTkFrame):
         self.display_results(results, query=query)
 
     def display_results(self, mangas, query=None):
+    # Only destroy widgets that are NOT the no_results_frame
         for widget in self.scrollable_frame.winfo_children():
-            widget.destroy()
+            if widget is not self.no_results_frame:
+                widget.destroy()
         self.manga_widgets.clear()
 
         if not mangas:
+            self.no_results_label.configure(
+                text=f"No manga found for '{query}'",
+                font=ctk.CTkFont(size=22, weight="bold")
+            )
             self.no_results_frame.pack(fill="both", expand=True)
             return
         else:
             self.no_results_frame.pack_forget()
-
+            
         num_columns = 4
         for index, manga_data in enumerate(mangas):
             row = index // num_columns
