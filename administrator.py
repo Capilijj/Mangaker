@@ -189,12 +189,40 @@ class AdminPage(ctk.CTkScrollableFrame):
      #[===============DITO YUNG LOGIC========================]
     # Update Chapter Logic dito yung logic ng update dipa connected sa db
     def update_chapter(self):
+        manga_title = self.manga_list_dropdown.get()
         chapter_num = self.chapter_number_entry.get()
+        status = self.update_status.get()
+
+        # validation if the fields are not filled out properly
+        if manga_title == "Select Manga":
+            messagebox.showerror("Error", "Please select a manga from the list.")
+            return
+
+        if status == "Select Status":
+            messagebox.showerror("Error", "Please select a status.")
+            return
+
         if not chapter_num:
             messagebox.showerror("Error", "Please fill out the chapter number.")
             return
-        print(f"Chapter {chapter_num} updated!")
+        
+        # Updating the manga details in the database
+        connection = sqlite3.connect('user.db')
+        cursor = connection.cursor()
+        cursor.execute(""" 
+            UPDATE Manga
+            SET latest = ?, status = ?
+            WHERE title = ?
+                       """, (chapter_num, status, manga_title))
+        
+        connection.commit()
+        connection.close()
+
         messagebox.showinfo("Success", f"Chapter {chapter_num} updated successfully!")
+
+
+
+        # resetting the fields after update
         self.chapter_number_entry.delete(0, "end")
         self.manga_list_dropdown.set("Select Manga")
         self.update_status.set("Select Status")
@@ -340,7 +368,7 @@ class AdminPage(ctk.CTkScrollableFrame):
         self.description.delete("1.0", "end")
 
         # To clear the image, set the image property to None and update the label text
-        
+
         self.image_label.configure(image=None, text="Upload Image")
         self.image_label.image = None # Important to prevent garbage collection for CTkImage 
    
