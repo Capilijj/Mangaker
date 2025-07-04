@@ -230,7 +230,8 @@ class App(ctk.CTk):
             on_home=self.show_dashboard,
             on_bookmark=self.show_bookmark,
             on_comics=self.show_Comics,
-            on_profile=self.show_profile
+            on_profile=self.show_profile,
+            on_search=self.handle_topbar_search
         )
         # self.topbar.grid(row=0, column=0, sticky="ew") # Do not grid initially
 
@@ -337,6 +338,17 @@ class App(ctk.CTk):
         self.administrator_page.tkraise()
         self.administrator_page.update()
 
+    
+
+    def handle_topbar_search(self, query=None):
+        """Handles search from the top bar and shows results in SearchPage."""
+        self.title("Search Results")
+        self.show_topbar()
+        self.topbar.set_active_button(None)  # No nav button is active for search
+        # Show the search results page
+        self.search_results_page.tkraise()
+        # Call the display_search_results method of SearchPage
+        self.search_results_page.display_search_results(query=query)
 
 
     def refresh_all_bookmark_related_uis(self):
