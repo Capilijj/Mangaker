@@ -2,6 +2,7 @@
 
 # === Import current_session for session management ===
 from users_db import current_session
+import sqlite3
 
 # === Import database-related functions ===
 from user_model import get_user_by_email, update_user_profile
@@ -73,30 +74,16 @@ def save_user_prof(profile):
 #=====================================================================================
 #===== Dito mo kukunin yung data pre na ilalapag sa database request manga ====
 #==================================================================================
-# === Store manga requests temporarily in memory ===
-_manga_request_buffer = []
 
-def buffer_manga_request(request_text, email):
-    """
-    Temporarily holds the manga request in memory.
-    This function should be replaced with a DB insert for production use.
-    """
-    if not request_text:
-        return False, "Request is empty."
+def add_manga_request(request_text):
 
-    if len(request_text) > 15:
-        return False, "Request exceeds 15 characters."
+    #  Store the request with user email
+    connection = sqlite3.connect('user.db')
+    cursor = connection.cursor()
 
-    # ✅ Store the request with user email
-    _manga_request_buffer.append({
-        "email": email,
-        "request_text": request_text
-    })
+    cursor.execute("INSERT INTO Requests (userId, request_title) VALUES (?, ?)", (current_session["user_id"], request_text))
+    
+    connection.commit()
+    connection.close()
 
-    return True, "Manga request buffered (not yet saved to database)."
-
-def get_buffered_requests():
-    """
-    Returns the current list of buffered manga requests (for preview or admin moderation).
-    """
-    return _manga_request_buffer
+    return True, "Manga has now been request to admin."

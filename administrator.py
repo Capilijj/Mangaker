@@ -62,7 +62,7 @@ class AdminPage(ctk.CTkScrollableFrame):
         self.user_scroll = ctk.CTkScrollableFrame(self.sidebar, width=200, height=400)
         self.user_scroll.grid(row=5, column=0, pady=10, padx=10, sticky="nsew")
         self.sidebar.grid_rowconfigure(5, weight=1)
-        self.load_user_requests()
+        self.load_user_requests() # showing all user requests on the sidebar
 
         self.content = ctk.CTkFrame(self, fg_color="transparent")
         self.content.grid(row=1, column=1, sticky="nsew", padx=(5, 10), pady=(0, 10))
@@ -313,6 +313,8 @@ class AdminPage(ctk.CTkScrollableFrame):
         for rows in requests_rows:
             request_text = rows[2]
             requests.append(request_text)
+
+        print(requests)  # Debug print to see the requests fetched
 
         # displaying requests in the scrollable frame
         for idx, req in enumerate(requests):
