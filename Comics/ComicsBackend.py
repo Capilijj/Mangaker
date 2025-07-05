@@ -6,8 +6,7 @@ from users_db import current_session
 from user_model import add_bookmark, remove_bookmark_db, get_bookmarks_by_email, get_connection
 
 # === DYNAMICALLY ADDED NEW MANGA LIST ===
-# This list is for manga temporarily added during the session,
-# not yet persisted to the database.
+
 new_manga_list = [] # Make sure this is accessible globally or passed appropriately
 
 # Helper function to sanitize string inputs (copied from adminBackend for consistency)
@@ -209,7 +208,6 @@ def get_all_manga():
 
     for new_manga in new_manga_list:
         # If new_manga has a title and not already in DB list, add it
-        # Note: Dynamic new_manga_list items might not have mangaId yet
         if "title" in new_manga and new_manga["title"] not in [m.get("title") for m in db_mangas]:
              # Assign a temporary unique ID for new_manga_list items if needed for UI,
              # or simply append if UI handles missing mangaId

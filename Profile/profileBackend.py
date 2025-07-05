@@ -72,7 +72,7 @@ def save_user_prof(profile):
 
     return success, message
 #=====================================================================================
-#===== Dito mo kukunin yung data pre na ilalapag sa database request manga ====
+#===== Dito  kukunin yung data na ilalapag sa database request manga ====
 #==================================================================================
 
 def add_manga_request(request_text):

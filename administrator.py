@@ -8,9 +8,7 @@ from datetime import datetime, timedelta
 import shutil
 from datetime import datetime, timedelta
 
-# Re-define make_circle here just in case, though it's also in main.py
-# If you prefer a single source, you could import it, but having it local
-# to components that heavily use it is also common.
+# Re-defining make_circle here from main.py
 def make_circle(img: Image.Image) -> Image.Image:
     size = (min(img.size),) * 2
     mask = Image.new('L', size, 0)
@@ -187,16 +185,16 @@ class AdminPage(ctk.CTkScrollableFrame):
 
 
 #==============================================================================================
-                  # BACKEND LOGIC Pero hindi pa conntected sa db
+                  # BACKEND LOGIC 
 #=============================================================================================
      #[===============DITO YUNG LOGIC========================]
-    # Update Chapter Logic dito yung logic ng update dipa connected sa db
+    # Update Chapter Logic - dito yung logic ng update
     def update_chapter(self):
         manga_title = self.manga_list_dropdown.get()
         chapter_num = self.chapter_number_entry.get()
         status = self.update_status.get()
 
-        # validation...
+        # validation
         if manga_title == "Select Manga":
             messagebox.showerror("Error", "Please select a manga from the list.")
             return
@@ -293,8 +291,7 @@ class AdminPage(ctk.CTkScrollableFrame):
             except Exception as e:
                 messagebox.showerror("Upload Error", str(e))
     #=================================================================================================================
-    #dito boi dito mag didisplay ang manga request dito mo iconnect yung sa database ito yung ui para sa request
-    # alisin mo nalang yang mga sample request
+    #dito mag didisplay ang manga request
     def auto_refresh_requests(self):
         self.load_user_requests()
         self.after(5000, self.auto_refresh_requests)  # refresh every 5 seconds
@@ -341,7 +338,7 @@ class AdminPage(ctk.CTkScrollableFrame):
         # Refresh the requests list
         self.load_user_requests()
     #=================================================================================================================
-    #Dito yung logic ng submit ng manga may printing nadin sa terminal overall wala patong function na maupdate ang database
+    #Dito yung logic ng submit ng manga
     def submit_manga(self):
             # Collecting data from the form to store in db
         title = self.manga_title.get()
@@ -381,7 +378,7 @@ class AdminPage(ctk.CTkScrollableFrame):
         except Exception as e:
             messagebox.showerror("Error", f"Failed to submit manga: {e}")
     #=================================================================================================================
-    #hindi na cleclear yung image awit hayaan nalang siguro nag try ako ng ibang way ayaw padin eh try mo
+    #dito yung pagbubura ng image field after mag-add ng manga
     def clear_fields(self):
         self.manga_title.delete(0, "end")
         for var in self.genre_vars.values():
@@ -389,8 +386,6 @@ class AdminPage(ctk.CTkScrollableFrame):
         self.status.set("Select Status")
         self.author_entry.delete(0, "end")
         self.description.delete("1.0", "end")
-
-        # To clear the image, set the image property to None and update the label text
 
         self.image_label.configure(image=None, text="Upload Image")
         self.image_label.image = None # Important to prevent garbage collection for CTkImage 
