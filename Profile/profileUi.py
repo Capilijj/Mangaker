@@ -2,7 +2,7 @@ import customtkinter as ctk
 from tkinter import filedialog
 from PIL import Image, ImageDraw
 from customtkinter import CTkImage
-from Profile.profileBackend import buffer_manga_request, get_user_prof, save_user_prof
+from Profile.profileBackend import add_manga_request, get_user_prof, save_user_prof
 from tkinter import messagebox
 import os
 import shutil
@@ -154,11 +154,11 @@ class ProfilePage(ctk.CTkFrame):
             if not value:
                 messagebox.showerror("Input Error", "Request cannot be empty.")
                 return
-            elif len(value) > 15:
-                messagebox.showerror("Input Error", "Request must be 15 characters or less.")
+            elif len(value) < 5:
+                messagebox.showerror("Input Error", "Request must be 5 characters or more.")
                 return
             else:
-                success, msg = buffer_manga_request(value, self.email)
+                success, msg = add_manga_request(value)
                 if success:
                     messagebox.showinfo(
                         "Request Submitted",
@@ -175,7 +175,7 @@ class ProfilePage(ctk.CTkFrame):
         submit_btn.place(relx=0.5, rely=0.75, anchor="center")
 
     def upload_photo(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.gif;*.bmp")])
+        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.webp;*.jfif")])
         if file_path:
             save_dir = "images"
             os.makedirs(save_dir, exist_ok=True)

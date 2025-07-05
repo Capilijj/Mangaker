@@ -64,9 +64,6 @@ def init_user_db():
             conn.commit()
             # print(f" Database {DB_NAME} initialized successfully with required tables.") # Removed
 
-            # ANG SEKSIYON NA NAGDADAGDAG NG DEFAULT ADMIN USER AY INALIS DITO.
-            # Kung kailangan mo ng admin account, siguraduhin na manual mo itong idadagdag (sa pamamagitan ng sign-up page)
-            # o sa ibang paraan.
 
     except sqlite3.Error as e:
         print(f" Error initializing database {DB_NAME}: {e}")

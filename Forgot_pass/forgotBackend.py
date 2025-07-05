@@ -5,11 +5,11 @@ import os
 def send_otp_email(email, otp):
     msg = EmailMessage()
     msg['Subject'] = "Your OTP Code"
-    msg['From'] = "Mangaker Support <jamesmangaker@gmail.com>"  # <-- Baguhin ang pangalan at email kung gusto mo
+    msg['From'] = "Mangaker Support <jamesmangaker@gmail.com>" 
     msg['To'] = email
     msg.set_content(f"Your OTP is: {otp}")
 
-    # Kunin ang credentials mula sa environment variable o diretso dito (not recommended for production)
+    # Kunin ang credentials mula sa environment variable o diretso dito
     sender_email = os.getenv("SENDER_EMAIL", "your_email@gmail.com")
     app_password = os.getenv("APP_PASSWORD", "your_app_password")
 

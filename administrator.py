@@ -3,10 +3,12 @@ from tkinter import messagebox, filedialog
 from PIL import Image, ImageDraw
 import os
 from user_model import get_user_prof, get_current_username, clear_current_user
+import sqlite3
+from datetime import datetime, timedelta
+import shutil
+from datetime import datetime, timedelta
 
-# Re-define make_circle here just in case, though it's also in main.py
-# If you prefer a single source, you could import it, but having it local
-# to components that heavily use it is also common.
+# Re-defining make_circle here from main.py
 def make_circle(img: Image.Image) -> Image.Image:
     size = (min(img.size),) * 2
     mask = Image.new('L', size, 0)
@@ -59,7 +61,9 @@ class AdminPage(ctk.CTkScrollableFrame):
         self.user_scroll = ctk.CTkScrollableFrame(self.sidebar, width=200, height=400)
         self.user_scroll.grid(row=5, column=0, pady=10, padx=10, sticky="nsew")
         self.sidebar.grid_rowconfigure(5, weight=1)
-        self.load_user_requests()
+
+        self.load_user_requests() # showing all user requests on the sidebar
+        self.auto_refresh_requests()
 
         self.content = ctk.CTkFrame(self, fg_color="transparent")
         self.content.grid(row=1, column=1, sticky="nsew", padx=(5, 10), pady=(0, 10))
@@ -143,7 +147,7 @@ class AdminPage(ctk.CTkScrollableFrame):
         self.update_container = ctk.CTkFrame(self.content, fg_color="#1a1a1a", corner_radius=10)
         self.update_container.grid(row=16, column=0, pady=(0, 20), padx=10, sticky="ew")
         self.update_container.grid_columnconfigure(0, weight=1)
-
+        
 
         # Manga List Label
         ctk.CTkLabel(self.update_container, text="Manga List:", anchor="w",
@@ -151,30 +155,28 @@ class AdminPage(ctk.CTkScrollableFrame):
         #=====================================================================================================================
         #    DITO YUNG DROP DOWN NA KAILANGAN MO LAGYAN NG LAMAN YUNG TITLE  + name kung dimo pa nababago yung MGA MANGA NATIN
         #=====================================================================================================================
-        # Manga List Dropdown (empty for now)
+        # Manga List Dropdown
         self.manga_list_dropdown = ctk.CTkOptionMenu(self.update_container,
-                                                    values=["lagyan moto ng parameter na makikita ang laman ng manga sa database"],  # Empty list
+                                                    values= self.manga_titles(),  # Display all manga titles
                                                     fg_color="#39ff14", text_color="black", button_color="#28c20e")
         self.manga_list_dropdown.set("Select Manga")
         self.manga_list_dropdown.grid(row=1, column=0, sticky="ew", padx=10, pady=5)
 
-        # Chapter Number Label
+        # Status Label and Dropdown (row 2 and 3)
+        ctk.CTkLabel(self.update_container, text="Status:", anchor="w", font=ctk.CTkFont(size=16, weight="bold")).grid(row=2, column=0, sticky="ew", padx=10)
+        self.update_status = ctk.CTkOptionMenu(self.update_container,
+                                               values=["Ongoing", "Completed", "Hiatus"],
+                                               fg_color="#39ff14", text_color="black", button_color="#28c20e")
+        self.update_status.set("Select Status")
+        self.update_status.grid(row=3, column=0, sticky="ew", padx=10, pady=5)
+
+        # Chapter Number Label and Entry (row 4 and 5)
         ctk.CTkLabel(self.update_container, text="Chapter Number:", anchor="w",
-                    font=ctk.CTkFont(size=16, weight="bold")).grid(row=2, column=0, sticky="ew", padx=10, pady=(10, 0))
-
-        # Chapter Number Entry
+                    font=ctk.CTkFont(size=16, weight="bold")).grid(row=4, column=0, sticky="ew", padx=10, pady=(10, 0))
         self.chapter_number_entry = ctk.CTkEntry(self.update_container, placeholder_text="Enter chapter number")
-        self.chapter_number_entry.grid(row=3, column=0, sticky="ew", padx=10, pady=5)
+        self.chapter_number_entry.grid(row=5, column=0, sticky="ew", padx=10, pady=5)
 
-        # Chapter Description Label
-        ctk.CTkLabel(self.update_container, text="Chapter Description:", anchor="w",
-                    font=ctk.CTkFont(size=16, weight="bold")).grid(row=4, column=0, sticky="ew", padx=10)
-
-        # Chapter Description Textbox
-        self.chapter_desc = ctk.CTkTextbox(self.update_container, height=100)
-        self.chapter_desc.grid(row=5, column=0, sticky="ew", padx=10, pady=5)
-
-        # Update Button
+        # Update Button (row 6)
         ctk.CTkButton(self.update_container, text="Update Chapter", command=self.update_chapter,
                     fg_color="#39ff14", hover_color="#1f8112", text_color="black").grid(row=6, column=0, pady=(5, 10), padx=10, sticky="ew")
 
@@ -183,23 +185,56 @@ class AdminPage(ctk.CTkScrollableFrame):
 
 
 #==============================================================================================
-                  # BACKEND LOGIC Pero hindi pa conntected sa db
+                  # BACKEND LOGIC 
 #=============================================================================================
      #[===============DITO YUNG LOGIC========================]
-    # Update Chapter Logic dito yung logic ng update dipa connected sa db
+    # Update Chapter Logic - dito yung logic ng update
     def update_chapter(self):
+        manga_title = self.manga_list_dropdown.get()
         chapter_num = self.chapter_number_entry.get()
-        chapter_desc = self.chapter_desc.get("1.0", "end").strip()
-        if not chapter_num or not chapter_desc:
-            messagebox.showerror("Error", "Please fill out all chapter fields.")
+        status = self.update_status.get()
+
+        # validation
+        if manga_title == "Select Manga":
+            messagebox.showerror("Error", "Please select a manga from the list.")
             return
-        print(f"Chapter {chapter_num} updated with description:\n{chapter_desc}")
+        if status == "Select Status":
+            messagebox.showerror("Error", "Please select a status.")
+            return
+        if not chapter_num:
+            messagebox.showerror("Error", "Please fill out the chapter number.")
+            return
+
+        # Set timezone to UTC+8 for update_date
+        ph_time = datetime.utcnow() + timedelta(hours=8)
+        ph_timestamp = ph_time.strftime('%Y-%m-%d %H:%M:%S')
+
+        # Updating the manga details in the database
+        connection = sqlite3.connect('user.db')
+        cursor = connection.cursor()
+        cursor.execute(""" 
+            UPDATE Manga
+            SET latest = ?, status = ?, update_date = ?
+            WHERE title = ?
+        """, (chapter_num, status, ph_timestamp, manga_title))
+        connection.commit()
+        connection.close()
+
         messagebox.showinfo("Success", f"Chapter {chapter_num} updated successfully!")
+
+        # resetting the fields after update
         self.chapter_number_entry.delete(0, "end")
-        self.chapter_desc.delete("1.0", "end")
-        self.manga_list_dropdown.set("Select Manga")             # Clear dropdown
-        self.chapter_number_entry.delete(0, "end")               # Clear chapter number entry
-        self.chapter_desc.delete("1.0", "end")
+        self.manga_list_dropdown.set("Select Manga")
+        self.update_status.set("Select Status")
+        
+    def manga_titles(self):
+        # Connect to the database and fetch manga titles
+        connection = sqlite3.connect('user.db')
+        cursor = connection.cursor()
+        cursor.execute("SELECT title FROM Manga ORDER BY title ASC") # fetching titles in alphabetical order
+        titles = [row[0] for row in cursor.fetchall()]
+        connection.close()
+        return titles if titles else ["No Manga Found"]
 
     #dito yung mag upload ng image============
     def load_profile_image(self):
@@ -229,45 +264,121 @@ class AdminPage(ctk.CTkScrollableFrame):
 
     #logic ng photo ====================================================================================
     def upload_photo(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
+        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg *.webp *.jfif")])
         if file_path:
+            save_dir = "image"
+
+            os.makedirs(save_dir, exist_ok=True)  # Ensure the directory exists
+            
+            # Get the original file name and extension
+            original_name = os.path.basename(file_path)
+            name, ext = os.path.splitext(original_name)
+            
+            # Construct a new file path in the image directory
+            save_path = os.path.join(save_dir, f"{name}{ext}")
+
+
             try:
+                shutil.copy(file_path, save_path)
+                print(f"Image successfully moved to: {save_path}")  # Debug message to verify path
+
+                
                 img = Image.open(file_path).resize((180, 220), Image.Resampling.LANCZOS)
                 image_ctk = ctk.CTkImage(light_image=img, dark_image=img, size=(180, 220))
                 self.image_label.configure(image=image_ctk, text="")
                 self.image_label.image = image_ctk
-                self.current_image_path = file_path
+                self.current_image_path = save_path
             except Exception as e:
                 messagebox.showerror("Upload Error", str(e))
     #=================================================================================================================
-    #dito boi dito mag didisplay ang manga request dito mo iconnect yung sa database ito yung ui para sa request
-    # alisin mo nalang yang mga sample request
-
+    #dito mag didisplay ang manga request
+    def auto_refresh_requests(self):
+        self.load_user_requests()
+        self.after(5000, self.auto_refresh_requests)  # refresh every 5 seconds
+        
     def load_user_requests(self):
         for widget in self.user_scroll.winfo_children():
             widget.destroy()
-        requests = [
-            "Add Naruto", "Bug in One Piece", "More romance", "Upload Berserk",
-            "Fix My Hero", "Update Bleach", "Add Tokyo Ghoul"
-        ]
-        for idx, req in enumerate(requests):
-            ctk.CTkLabel(self.user_scroll, text=req, anchor="w", wraplength=170).grid(row=idx, column=0, sticky="w", padx=5, pady=2)
+
+        # Connect to the database and fetch user requests
+        connection = sqlite3.connect('user.db')
+        cursor = connection.cursor()
+        cursor.execute("SELECT requestId, request_title FROM Requests")
+        requests_rows = cursor.fetchall()
+        connection.close()
+
+        # displaying requests in the scrollable frame
+        for idx, (req_id, req_text) in enumerate(requests_rows):
+            req_frame = ctk.CTkFrame(self.user_scroll, fg_color="transparent")
+            req_frame.grid(row=idx, column=0, sticky="ew", padx=5, pady=2)
+            req_frame.grid_columnconfigure(0, weight=1)  # label column expands
+            req_frame.grid_columnconfigure(1, weight=0)  # button column stays right
+
+            req_label = ctk.CTkLabel(req_frame, text=req_text, anchor="center", wraplength=120, justify="center")
+            req_label.grid(row=0, column=0, sticky="ew", padx=(0, 10))
+
+            remove_btn = ctk.CTkButton(
+                req_frame,
+                text="Remove",
+                fg_color="red",
+                hover_color="#cc0000",
+                text_color="white",
+                width=60,
+                command=lambda rid=req_id: self.remove_user_request(rid)
+            )
+            remove_btn.grid(row=0, column=1, padx=(10, 0), sticky="e")
+
+    def remove_user_request(self, req_id):
+        # Remove the request from the database
+        connection = sqlite3.connect('user.db')
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM Requests WHERE requestId = ?", (req_id,))
+        connection.commit()
+        connection.close()
+        # Refresh the requests list
+        self.load_user_requests()
     #=================================================================================================================
-    #Dito yung logic ng submit ng manga may printing nadin sa terminal overall wala patong function na maupdate ang database
+    #Dito yung logic ng submit ng manga
     def submit_manga(self):
+            # Collecting data from the form to store in db
         title = self.manga_title.get()
         genres = [g for g, v in self.genre_vars.items() if v.get()]
         status = self.status.get()
         author = self.author_entry.get()
         desc = self.description.get("1.0", "end").strip()
+        img_path = getattr(self, 'current_image_path', None) # get the path of uploaded image
+
         if not title or not genres or status == "Select Status" or not author or not desc:
             messagebox.showerror("Error", "Please complete all fields.")
             return
-        print(f"Submitted: {title} | {genres} | {status} | {author} | {desc}")
-        messagebox.showinfo("Success", "Manga submitted!")
-        self.clear_fields()
+
+        try:
+            # setting timezone to UTC+8 for the update date
+            ph_time = datetime.utcnow() + timedelta(hours=8)
+            ph_timestamp = ph_time.strftime('%Y-%m-%d %H:%M:%S')
+
+            # Connect to the database and insert the manga data
+            connection = sqlite3.connect('user.db')
+            cursor = connection.cursor()
+            cursor.execute("""
+                INSERT INTO Manga (title, author, latest, status, img_path, description, update_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (title, author, 1, status, img_path, desc, ph_timestamp))
+            
+            manga_id = cursor.lastrowid  # Get the ID of the newly inserted manga
+
+            for genre in genres:
+                cursor.execute("INSERT INTO Genres (mangaId, genre) VALUES (?, ?)", (manga_id, genre))
+
+            connection.commit()
+            connection.close()
+            messagebox.showinfo("Success", "Manga submitted!")
+            self.clear_fields()
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to submit manga: {e}")
     #=================================================================================================================
-    #hindi na cleclear yung image awit hayaan nalang siguro nag try ako ng ibang way ayaw padin eh try mo
+    #dito yung pagbubura ng image field after mag-add ng manga
     def clear_fields(self):
         self.manga_title.delete(0, "end")
         for var in self.genre_vars.values():
@@ -275,10 +386,10 @@ class AdminPage(ctk.CTkScrollableFrame):
         self.status.set("Select Status")
         self.author_entry.delete(0, "end")
         self.description.delete("1.0", "end")
-        # To clear the image, set the image property to None and update the label text
+
         self.image_label.configure(image=None, text="Upload Image")
-     #   self.image_label.image = None # Important to prevent garbage collection for CTkImage 
-        #bali hnd nagana yan
+        self.image_label.image = None # Important to prevent garbage collection for CTkImage 
+   
     #=================================================================================================================
     #log out logic (back to log in)
     def logout(self):
@@ -288,3 +399,15 @@ class AdminPage(ctk.CTkScrollableFrame):
         else:
             # Fallback if controller is not set (e.g., if AdminPage is run standalone, which it shouldn't be now)
             self.master.destroy()
+        
+
+#temporary runner for testing the AdminPage
+if __name__ == "__main__":
+    import customtkinter as ctk
+
+    root = ctk.CTk()
+    root.title("Admin Page Test")
+    root.geometry("1100x800")
+    admin_page = AdminPage(root)
+    admin_page.pack(fill="both", expand=True)
+    root.mainloop()

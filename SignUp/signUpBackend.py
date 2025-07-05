@@ -18,8 +18,8 @@ def validate_user_data(email, username, password, confirm_password, image_path=N
         return False, "Please fill in all fields."
     if not image_path:
         return False, "Please upload a profile photo."
-    if not (6 <= len(password) <= 15):
-        return False, "Password must be 15 char/num."
+    if not (6 <= len(password) <= 6):
+        return False, "Password must be 6 char/num."
     if not email.endswith("@gmail.com"):
         return False, "Please use a Valid Gmail address."
     if password != confirm_password:
