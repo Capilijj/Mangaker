@@ -255,7 +255,7 @@ class SignUpPage(ctk.CTkFrame):
         self.profile_img_label.image = ctk_img
 
     def upload_photo(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.gif;*.bmp")])
+        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.webp;*.jfif")])
         if file_path:
             save_dir = "image"
             os.makedirs(save_dir, exist_ok=True)

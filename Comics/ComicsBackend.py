@@ -21,40 +21,111 @@ def _sanitize_string_input(value):
 
 # === Returns manga list directly from the database (Optimized with JOIN) ===
 def get_manga_list(query=None, genre_filter=None, status_filter=None, order_filter=None, is_new_added_filter=False):
-    # --- START MODIFICATION FOR "ADDED" FILTER ---
-    # Ito ang pinaka-unang check para sa "Added" filter.
-    # Kung ang filter ay "Added", ibabalik agad ang in-memory new_manga_list.
-    if is_new_added_filter:
-        sorted_new_manga = sorted(
-            new_manga_list,
-            key=lambda x: x.get("release_date", datetime.min), # Sort by release_date
-            reverse=True # Newest first
-        )
-        return sorted_new_manga # AGAD IBALIK, HINDI NA DADAAN SA DATABASE QUERY
-    # --- END MODIFICATION FOR "ADDED" FILTER ---
+    # --- "Added" filter: combine DB and new_manga_list ---
+    if is_new_added_filter or (order_filter == "Added"):
+        # Get all DB manga
+        db_mangas = []
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("PRAGMA foreign_keys = ON;")
+                sql_query = '''
+                    SELECT
+                        M.mangaId, M.title, M.author, M.latest, M.status, M.img_path,
+                        M.description, M.update_date, GROUP_CONCAT(G.genre, ', ') AS genres_list
+                    FROM Manga AS M
+                    LEFT JOIN Genres AS G ON M.mangaId = G.mangaId
+                    GROUP BY M.mangaId, M.title, M.author, M.latest, M.status, M.img_path, M.description, M.update_date
+                '''
+                cursor.execute(sql_query)
+                manga_rows = cursor.fetchall()
+                for row in manga_rows:
+                    mangaId, title, author, latest, status, img_path, description, update_date, genres_str = row
+                    db_mangas.append({
+                        "mangaId": mangaId,
+                        "title": title,
+                        "name": title,
+                        "author": author,
+                        "chapter": latest,
+                        "genre": genres_str if genres_str else "",
+                        "status": status,
+                        "image": img_path,
+                        "description": description,
+                        "update_date": update_date
+                    })
+        except Exception as e:
+            print(f"Error loading DB manga for 'Added' filter: {e}")
 
+        # Combine with new_manga_list (avoid duplicates by title)
+        all_titles = {m["title"] for m in db_mangas}
+        combined = db_mangas[:]
+        for m in new_manga_list:
+            if m.get("title") and m["title"] not in all_titles:
+                combined.append(m)
+        # Sort by release_date or update_date (newest first)
+        def get_sort_date(m):
+            return m.get("release_date") or m.get("update_date") or ""
+        combined.sort(key=get_sort_date, reverse=True)
+        return combined
+
+    # --- "Update" filter: show all ongoing manga (DB + admin-added) sorted by update date ---
+    if order_filter == "Update":
+        # Get DB manga with status ongoing
+        db_mangas = []
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("PRAGMA foreign_keys = ON;")
+                sql_query = '''
+                    SELECT
+                        M.mangaId, M.title, M.author, M.latest, M.status, M.img_path,
+                        M.description, M.update_date, GROUP_CONCAT(G.genre, ', ') AS genres_list
+                    FROM Manga AS M
+                    LEFT JOIN Genres AS G ON M.mangaId = G.mangaId
+                    WHERE LOWER(M.status) = 'ongoing'
+                    GROUP BY M.mangaId, M.title, M.author, M.latest, M.status, M.img_path, M.description, M.update_date
+                '''
+                cursor.execute(sql_query)
+                manga_rows = cursor.fetchall()
+                for row in manga_rows:
+                    mangaId, title, author, latest, status, img_path, description, update_date, genres_str = row
+                    db_mangas.append({
+                        "mangaId": mangaId,
+                        "title": title,
+                        "name": title,
+                        "author": author,
+                        "chapter": latest,
+                        "genre": genres_str if genres_str else "",
+                        "status": status,
+                        "image": img_path,
+                        "description": description,
+                        "update_date": update_date
+                    })
+        except Exception as e:
+            print(f"Error loading DB manga for 'Update' filter: {e}")
+
+        # Add admin-added manga with status ongoing
+        ongoing_new = [m for m in new_manga_list if str(m.get("status", "")).lower() == "ongoing"]
+        # Sort all by update_date or release_date (newest first)
+        def get_sort_date(m):
+            return m.get("update_date") or m.get("release_date") or ""
+        combined = db_mangas + ongoing_new
+        combined.sort(key=get_sort_date, reverse=True)
+        return combined
+
+    # --- Default: original DB logic, no change ---
     mangas_from_db = []
     try:
         with get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("PRAGMA foreign_keys = ON;")
-
             sql_query = '''
                 SELECT
-                    M.mangaId,
-                    M.title,
-                    M.author,
-                    M.latest,
-                    M.status,
-                    M.img_path,
-                    M.description,
-                    M.update_date,
-                    GROUP_CONCAT(G.genre, ', ') AS genres_list
-                FROM
-                    Manga AS M
-                LEFT JOIN
-                    Genres AS G ON M.mangaId = G.mangaId
-                WHERE 1=1 -- Dummy condition to allow easy addition of AND clauses
+                    M.mangaId, M.title, M.author, M.latest, M.status, M.img_path,
+                    M.description, M.update_date, GROUP_CONCAT(G.genre, ', ') AS genres_list
+                FROM Manga AS M
+                LEFT JOIN Genres AS G ON M.mangaId = G.mangaId
+                WHERE 1=1
             '''
             params = []
             having_conditions = []
@@ -64,15 +135,11 @@ def get_manga_list(query=None, genre_filter=None, status_filter=None, order_filt
                 sql_query += " AND LOWER(M.title) LIKE ?"
                 params.append(f"%{_sanitize_string_input(query).lower()}%")
 
-            # Handle status filter, potentially overridden by order filter
-            effective_status_filter = status_filter # Simulan sa kasalukuyang status_filter
-
-            # --- NEW LOGIC FOR "Unupdate" ORDER FILTER to force status ---
+            effective_status_filter = status_filter
             if order_filter == "Unupdate":
-                effective_status_filter = ["hiatus", "completed"] # I-force ang mga statuses na ito
-            # --- END NEW LOGIC ---
+                effective_status_filter = ["hiatus", "completed"]
 
-            if effective_status_filter: # Gamitin ang effective_status_filter
+            if effective_status_filter:
                 if isinstance(effective_status_filter, list):
                     placeholders = ', '.join(['?' for _ in effective_status_filter])
                     sql_query += f" AND LOWER(M.status) IN ({placeholders})"
@@ -91,7 +158,7 @@ def get_manga_list(query=None, genre_filter=None, status_filter=None, order_filt
                 sql_query += " HAVING " + " AND ".join(having_conditions)
                 params.extend(having_params)
 
-            # Apply order filter
+            # Order logic
             if order_filter == "A-Z":
                 sql_query += " ORDER BY M.title ASC"
             elif order_filter == "Z-A":
@@ -99,23 +166,16 @@ def get_manga_list(query=None, genre_filter=None, status_filter=None, order_filt
             elif order_filter == "Update":
                 sql_query += " ORDER BY M.update_date DESC NULLS LAST"
             elif order_filter == "Popular":
-                # For "Popular", we'll just sort by title for now.
-                # If there's a 'views' or 'popularity_score' column, that would be used here.
                 sql_query += " ORDER BY M.title ASC"
             elif order_filter == "Unupdate":
-                # For "Unupdate", sort by update date ascending (oldest first)
-                # Combined with the status filter above, this will show hiatus/completed, oldest update first.
                 sql_query += " ORDER BY M.update_date ASC NULLS FIRST"
-            else: # Default order if no specific order_filter is applied
-                sql_query += " ORDER BY M.title ASC" # O kung ano man ang default mo
+            else:
+                sql_query += " ORDER BY M.title ASC"
 
-            # === DITO DAPAT I-EXECUTE ANG SQL QUERY, MINSAN LANG ===
             cursor.execute(sql_query, params)
             manga_rows = cursor.fetchall()
-
             for row in manga_rows:
                 mangaId, title, author, latest, status, img_path, description, update_date, genres_str = row
-                
                 mangas_from_db.append({
                     "mangaId": mangaId,
                     "title": title,
@@ -133,6 +193,7 @@ def get_manga_list(query=None, genre_filter=None, status_filter=None, order_filt
     except Exception as e:
         print(f"An unexpected error occurred in get_manga_list: {e}")
     return mangas_from_db
+
 
 # === Returns new manga list added via add_manga ===
 def get_new_manga_list():

@@ -175,7 +175,7 @@ class ProfilePage(ctk.CTkFrame):
         submit_btn.place(relx=0.5, rely=0.75, anchor="center")
 
     def upload_photo(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.gif;*.bmp")])
+        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.webp;*.jfif")])
         if file_path:
             save_dir = "images"
             os.makedirs(save_dir, exist_ok=True)
